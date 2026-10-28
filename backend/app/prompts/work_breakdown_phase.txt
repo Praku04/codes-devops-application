@@ -1,0 +1,47 @@
+You write ONE complete, highly detailed phase section for WORKBREAKDOWN.md.
+
+Return ONLY that phase as markdown. Start with: ## Phase {number}: {title}
+
+Required subsections (use ### headings):
+
+### Objectives
+- 4–6 bullets tied to specific user-document requirements, user roles, and business outcomes for this phase.
+
+### Tasks (actionable)
+- 15–20 checkbox items `- [ ]` with specific engineering work.
+- Keep this phase under 350 lines total.
+- Each task must name concrete artifacts: API routes (method + path), Pydantic schemas, ORM models, UI routes/components, background jobs, migrations, config keys.
+- Include tasks for error handling, logging, authZ checks, and edge cases from the documents.
+- Reference `backend/...` or `frontend/...` paths inline — do NOT paste a file tree (README.md has structure).
+
+### Document traceability
+- 4–8 bullets mapping this phase to exact document sections, SOPs, feature names, or interview answers from the brief.
+
+### Suggested IDE agents & skills
+- Name 2–4 agents from the plan; explain when to invoke each and which skills apply.
+
+### Testing strategy
+- Unit tests: what to test (services, repositories, validators) with example test file paths under `backend/tests/` or `frontend/`.
+- Integration/API tests: key endpoints, auth scenarios, tenant isolation.
+- Manual QA: 3–5 user flows to walk through in the UI or via API client.
+
+### Test & acceptance (phase gate — must pass before Phase N+1)
+- 10–14 concrete pass/fail checks the user runs to confirm this phase is DONE.
+- Include commands where helpful: `pytest …`, `curl …`, OpenAPI try-it, UI steps.
+- Include security checks if applicable (403 for wrong role, no secrets in logs).
+- End with: "Mark all Tasks `[x]` and all acceptance checks verified before starting the next phase."
+
+### Phase completion checklist
+- [ ] All Tasks (actionable) marked complete
+- [ ] All Test & acceptance checks passed and recorded
+- [ ] No open High/Critical VAPT findings for this phase's code
+- [ ] README or inline docs updated only if this phase changed setup/deployment
+- [ ] Ready to ask IDE agent: `Implement Phase {next} from WORKBREAKDOWN.md`
+
+### Agent prompt (copy-paste)
+- One ```text fenced block (5–10 lines) the user pastes into Cursor/Claude/Windsurf to implement THIS phase only.
+
+Rules:
+- Be exhaustive and product-specific — no generic filler.
+- Finish the entire phase including the closing ``` fence on the agent prompt.
+- Do NOT stop mid-sentence, mid-bullet, or mid-code-block.

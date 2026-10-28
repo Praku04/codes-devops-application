@@ -1,0 +1,34 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.12
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+litellm==1.91.4
+boto3>=1.35.0
+pdfplumber>=0.11.0
+pypdf>=5.0.0
+python-docx>=1.1.2
+# Spreadsheet uploads. openpyxl reads .xlsx/.xlsm (pure Python, no native build on EC2);
+# xlrd 2.x reads the legacy .xls binary format and nothing else, which is exactly the gap
+# openpyxl leaves. CSV/TSV need no dependency -- the stdlib csv module handles those.
+openpyxl>=3.1.5
+xlrd>=2.0.1
+# Renders the SIPOC / process-flow / swimlane PNGs. Ships its own DejaVu fonts and needs no
+# display, so the Agg backend works unchanged on a headless EC2 box. Chosen over Graphviz
+# (needs the `dot` binary) and Mermaid (needs Node + headless Chrome).
+matplotlib>=3.9.0
+# Lays out SDD.md as a PDF -- the same markdown the UI previews, with SDD 3.2's three figures
+# embedded. Pure Python with no native build (same criterion as openpyxl above), and it has the
+# page-breaking flowable model matplotlib has no notion of. The DOCX half of the same download
+# needs nothing new: python-docx is already pinned above.
+reportlab>=4.2.0
+sqlalchemy>=2.0.36
+aiosqlite>=0.20.0
+httpx>=0.27.0
+typer>=0.12.0
+rich>=13.9.0
+python-dotenv>=1.0.1
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
+PyJWT>=2.9.0
+psycopg2-binary

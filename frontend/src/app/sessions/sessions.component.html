@@ -1,0 +1,324 @@
+<div class="dash" (click)="closeMenus()">
+  <header class="topbar">
+    <div class="brand">
+      <p class="eyebrow">AgentCraft</p>
+      <h1>Studio</h1>
+    </div>
+    <div class="topbar-actions">
+      <div class="who">
+        <span class="who-dot"></span>
+        {{ auth.user?.name || auth.user?.email }}
+      </div>
+      @if (auth.isAdmin) {
+        <button type="button" class="btn ghost" (click)="goAdmin()">Admin</button>
+      }
+      <button type="button" class="btn ghost" (click)="reload(); $event.stopPropagation()" [disabled]="busy">
+        {{ busy ? '…' : 'Refresh' }}
+      </button>
+      <button type="button" class="btn ghost" (click)="auth.logout()">Log out</button>
+      <button type="button" class="btn primary" (click)="startNew()">New workspace</button>
+    </div>
+  </header>
+
+  @if (error) {
+    <div class="alert" role="alert" (click)="$event.stopPropagation()">
+      <span>{{ error }}</span>
+      <button type="button" class="btn ghost tiny" (click)="error = ''">Dismiss</button>
+    </div>
+  }
+
+  <section class="kpis" aria-label="Workspace overview">
+    <button type="button" class="kpi" [class.on]="!hasActiveFilters" (click)="applyStat('total'); $event.stopPropagation()">
+      <span class="kpi-val">{{ stats.total }}</span>
+      <span class="kpi-label">Workspaces</span>
+    </button>
+    <button type="button" class="kpi" [class.on]="stateFilter === 'EXPORTED'" (click)="applyStat('exported'); $event.stopPropagation()">
+      <span class="kpi-val ok">{{ stats.exported }}</span>
+      <span class="kpi-label">Exported</span>
+    </button>
+    <button type="button" class="kpi" [class.on]="stateFilter === 'READY_FOR_REVIEW'" (click)="applyStat('ready'); $event.stopPropagation()">
+      <span class="kpi-val info">{{ stats.ready }}</span>
+      <span class="kpi-label">Ready</span>
+    </button>
+    <button type="button" class="kpi" [class.on]="stateFilter === 'in_progress'" (click)="applyStat('active'); $event.stopPropagation()">
+      <span class="kpi-val warn">{{ stats.active }}</span>
+      <span class="kpi-label">In progress</span>
+    </button>
+    <button type="button" class="kpi slim" [class.on]="platformFilter === 'cursor'" (click)="applyStat('cursor'); $event.stopPropagation()">
+      <span class="kpi-val sm">{{ stats.cursor }}</span>
+      <span class="kpi-label">Cursor</span>
+    </button>
+    <button type="button" class="kpi slim" [class.on]="platformFilter === 'claude_code'" (click)="applyStat('claude'); $event.stopPropagation()">
+      <span class="kpi-val sm">{{ stats.claude }}</span>
+      <span class="kpi-label">Claude</span>
+    </button>
+    <button type="button" class="kpi slim" [class.on]="platformFilter === 'windsurf'" (click)="applyStat('windsurf'); $event.stopPropagation()">
+      <span class="kpi-val sm">{{ stats.windsurf }}</span>
+      <span class="kpi-label">Windsurf</span>
+    </button>
+    <button type="button" class="kpi slim" [class.on]="platformFilter === 'github_copilot'" (click)="applyStat('githubCopilot'); $event.stopPropagation()">
+      <span class="kpi-val sm">{{ stats.githubCopilot }}</span>
+      <span class="kpi-label">GitHub Copilot</span>
+    </button>
+  </section>
+
+  <section class="toolbar" (click)="$event.stopPropagation()">
+    <div class="search-wrap">
+      <input
+        type="search"
+        class="search"
+        name="sessionSearch"
+        placeholder="Search workspaces, agents, skills…"
+        [ngModel]="query"
+        (ngModelChange)="query = $event"
+        (input)="onSearchInput($event)"
+        (keydown)="onSearchKeydown($event)"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      @if (query) {
+        <button type="button" class="search-clear" (click)="query = ''; $event.stopPropagation()" aria-label="Clear search">×</button>
+      }
+    </div>
+    <select class="select" [(ngModel)]="sortKey" aria-label="Sort">
+      <option value="updated">Newest</option>
+      <option value="name">Name</option>
+      <option value="agents">Most agents</option>
+    </select>
+    <div class="view-toggle" role="group" aria-label="View">
+      <button type="button" class="tog" [class.on]="viewMode === 'table'" (click)="viewMode = 'table'">List</button>
+      <button type="button" class="tog" [class.on]="viewMode === 'board'" (click)="viewMode = 'board'">Board</button>
+    </div>
+    @if (hasActiveFilters) {
+      <button type="button" class="btn ghost tiny" (click)="clearFilters()">Clear</button>
+    }
+    <span class="count">{{ filteredSessions.length }}/{{ sessions.length }}</span>
+  </section>
+
+  @if (initialLoad && busy) {
+    <div class="empty">
+      <div class="pulse"></div>
+      <p>Loading studio…</p>
+    </div>
+  }
+
+  @if (!initialLoad && !busy && !sessions.length) {
+    <div class="empty panel">
+      <h2>No workspaces yet</h2>
+      <p>Generate agents, skills, and rules from a problem statement.</p>
+      <button type="button" class="btn primary" (click)="startNew()">Create workspace</button>
+    </div>
+  }
+
+  @if (!busy && sessions.length && !filteredSessions.length) {
+    <div class="empty panel">
+      <h2>No matches</h2>
+      <p>Adjust search or clear filters.</p>
+      <button type="button" class="btn ghost" (click)="clearFilters()">Clear filters</button>
+    </div>
+  }
+
+  <!-- LIST / TABLE VIEW -->
+  @if (viewMode === 'table' && filteredSessions.length) {
+    <div class="table-wrap panel">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Workspace</th>
+            <th>IDE</th>
+            <th>Status</th>
+            <th title="A = Agents · S = Skills · R = Rules">A-Agents · S-Skills · R-Rules</th>
+            <th>Updated</th>
+            <th class="thr">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of filteredSessions; track s.id) {
+            <tr
+              class="row"
+              [class.open]="isExpanded(s)"
+            >
+              <td class="name-cell" (click)="toggleExpand(s, $event)">
+                <div class="name-stack">
+                  <strong [title]="s.name">{{ s.name }}</strong>
+                  @if (s.summary) {
+                    <span class="sub" [title]="s.summary">{{ s.summary }}</span>
+                  }
+                </div>
+              </td>
+              <td>
+                <span class="pill plat">{{ platformShort(s.platform) }}</span>
+              </td>
+              <td>
+                <span class="pill status" [attr.data-tone]="stateTone(s.state)">{{ stateLabel(s.state) }}</span>
+              </td>
+              <td>
+                <span class="mono">{{ artifactLine(s) }}</span>
+              </td>
+              <td>
+                <span class="muted" [title]="relativeTime(s.updated_at)">{{ formatIst(s.updated_at) }}</span>
+              </td>
+              <td class="actions-cell" (click)="$event.stopPropagation()">
+                <div class="row-actions">
+                  <button type="button" class="btn primary tiny" (click)="openSession(s, $event)">Open</button>
+                  <button
+                    type="button"
+                    class="btn ghost tiny"
+                    (click)="downloadZip(s, $event)"
+                    [disabled]="downloadingId === s.id || !canDownload(s)"
+                    [title]="canDownload(s) ? 'Download workspace zip' : 'Finish generation before download'"
+                  >
+                    {{ downloadingId === s.id ? '…' : 'Zip' }}
+                  </button>
+                  <button type="button" class="btn ghost tiny" (click)="toggleExpand(s, $event)">
+                    {{ isExpanded(s) ? 'Hide' : 'Details' }}
+                  </button>
+                  <button type="button" class="btn ghost tiny danger-text" (click)="askDelete(s, $event)">Delete</button>
+                </div>
+              </td>
+            </tr>
+            @if (isExpanded(s)) {
+              <tr class="detail-row">
+                <td colspan="6">
+                  <div class="detail-panel">
+                    @if (hasArtifactNames(s)) {
+                      @if (s.agent_names?.length) {
+                        <div class="detail-block">
+                          <span class="dl">Agents</span>
+                          <div class="chips">
+                            @for (n of s.agent_names; track n) {
+                              <button type="button" class="chip agent" [class.on]="chipFilter === n" (click)="filterByChip(n, $event)">{{ n }}</button>
+                            }
+                          </div>
+                        </div>
+                      }
+                      @if (s.skill_names?.length) {
+                        <div class="detail-block">
+                          <span class="dl">Skills</span>
+                          <div class="chips">
+                            @for (n of s.skill_names; track n) {
+                              <button type="button" class="chip skill" [class.on]="chipFilter === n" (click)="filterByChip(n, $event)">{{ n }}</button>
+                            }
+                          </div>
+                        </div>
+                      }
+                      @if (s.rule_names?.length) {
+                        <div class="detail-block">
+                          <span class="dl">Rules</span>
+                          <div class="chips">
+                            @for (n of s.rule_names; track n) {
+                              <button type="button" class="chip rule" [class.on]="chipFilter === n" (click)="filterByChip(n, $event)">{{ n }}</button>
+                            }
+                          </div>
+                        </div>
+                      }
+                    } @else {
+                      <p class="muted tiny">No plan artifacts yet — open to continue generation.</p>
+                    }
+                    @if (s.document_names?.length) {
+                      <div class="detail-block">
+                        <span class="dl">Documents</span>
+                        <div class="chips">
+                          @for (n of s.document_names; track n) {
+                            <span class="chip doc">{{ n }}</span>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- BOARD VIEW -->
+  @if (viewMode === 'board' && filteredSessions.length) {
+    <div class="board">
+      @for (s of filteredSessions; track s.id) {
+        <article class="board-card" [class.open]="isExpanded(s)" (click)="toggleExpand(s)">
+          <div class="bc-top">
+            <span class="pill status" [attr.data-tone]="stateTone(s.state)">{{ stateLabel(s.state) }}</span>
+            <span class="pill plat">{{ platformShort(s.platform) }}</span>
+          </div>
+          <h3 [title]="s.name">{{ s.name }}</h3>
+          <p class="bc-meta mono" [title]="relativeTime(s.updated_at)">{{ artifactLine(s) }} · {{ formatIst(s.updated_at) }}</p>
+          @if (s.summary) {
+            <p class="bc-sum">{{ s.summary }}</p>
+          }
+          @if (isExpanded(s) && hasArtifactNames(s)) {
+            <div class="chips compact" (click)="$event.stopPropagation()">
+              @for (n of (s.agent_names || []).slice(0, 6); track n) {
+                <button type="button" class="chip agent" [class.on]="chipFilter === n" (click)="filterByChip(n, $event)">{{ n }}</button>
+              }
+            </div>
+          }
+          <div class="bc-actions" (click)="$event.stopPropagation()">
+            <button type="button" class="btn primary tiny" (click)="openSession(s, $event)">Open</button>
+            <button type="button" class="btn ghost tiny" (click)="downloadZip(s, $event)" [disabled]="!canDownload(s) || downloadingId === s.id">Zip</button>
+            <button type="button" class="btn ghost tiny danger-text" (click)="askDelete(s, $event)">Delete</button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  @if (pendingDelete) {
+    <div class="delete-modal-backdrop" (click)="cancelDelete($event)" role="presentation">
+      <div
+        class="delete-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-modal-title"
+        (click)="$event.stopPropagation()"
+      >
+        <h2 id="delete-modal-title">Delete this workspace?</h2>
+        <p class="delete-modal-lead">
+          Are you sure you want to delete
+          <strong>{{ pendingDelete.name }}</strong>?
+          This cannot be undone.
+        </p>
+        <dl class="delete-meta">
+          <div>
+            <dt>Status</dt>
+            <dd>{{ stateLabel(pendingDelete.state) }}</dd>
+          </div>
+          <div>
+            <dt>IDE</dt>
+            <dd>{{ platformLabel(pendingDelete.platform) }}</dd>
+          </div>
+          <div>
+            <dt>Artifacts</dt>
+            <dd class="mono">{{ artifactLine(pendingDelete) }}</dd>
+          </div>
+          <div>
+            <dt>Updated</dt>
+            <dd>{{ formatIst(pendingDelete.updated_at) }}</dd>
+          </div>
+          @if (pendingDelete.summary) {
+            <div class="full">
+              <dt>Summary</dt>
+              <dd>{{ pendingDelete.summary }}</dd>
+            </div>
+          }
+        </dl>
+        <div class="delete-modal-actions">
+          <button type="button" class="btn ghost" (click)="cancelDelete($event)" [disabled]="deletingId === pendingDelete.id">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn danger"
+            (click)="confirmDelete($event)"
+            [disabled]="deletingId === pendingDelete.id"
+          >
+            {{ deletingId === pendingDelete.id ? 'Deleting…' : 'Yes, delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

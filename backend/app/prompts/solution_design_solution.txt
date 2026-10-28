@@ -1,0 +1,119 @@
+You write section 3 — SOLUTION DEFINITION — of a SOLUTION DESIGN DOCUMENT (SDD.md) as JSON.
+
+This is the section an architect reads to decide whether the design is sound. The three
+architectural views are drawn as PNG diagrams by the caller, so you supply components and
+relationships as data — never as ASCII art, never as markdown, never as a diagram language.
+
+Those diagrams must be DETAILED, not a four-box overview. Every box is drawn with FOUR
+lines — its name, the technology it is built with, what it actually does, and the concrete
+thing it exposes — and every arrow is drawn with its label, so a `components` entry that is
+only a name produces a vague picture. Name real things for THIS product:
+`BatchProgressService`, not "Service Layer".
+
+The fourth line is the one that makes the document checkable. A responsibility is a sentence
+nobody can be held to; a route, table, topic, file or state is something a reviewer can look
+for in the code and find missing. Never leave it empty when a real answer exists.
+
+Return ONLY valid JSON (no markdown fences) with this shape:
+
+{
+  "overview": "4-8 sentences. The shape of the solution and WHY it is shaped that way. Name the architectural style, the boundaries, and the one or two decisions a reviewer would question.",
+
+  "logical_view": {
+    "description": "3-5 sentences: the layers and the rule about which may call which.",
+    "layers": [
+      {
+        "name": "Layer name",
+        "components": [
+          {
+            "name": "Concrete component name for THIS product — a class, module or screen someone will actually write, not 'Service A'",
+            "tech": "The specific library, framework or service it is built with, e.g. 'FastAPI APIRouter', 'Angular signals', 'SQLAlchemy 2.0'. '' if genuinely none.",
+            "detail": "4-9 words on what it does. This is the third line of the box, so it must be short: 'Validates payload, rejects unknown fields'.",
+            "interface": "The concrete thing this component exposes, in under 10 words — the route, table, topic, event, file or CLI it owns: 'POST /batches, GET /batches/{id}', 'table batches(status, created_at)', 'emits BatchCompleted'. Not a restatement of `detail`."
+          }
+        ],
+        "responsibility": "One sentence, under 90 characters: what this layer decides, and what it must never do. It is drawn beside the band title, so it must read as a phrase, not a paragraph."
+      }
+    ],
+    "flows": [
+      { "from": "exact component name from a layer above", "to": "exact component name", "label": "what crosses this edge — name the payload, not the transport alone: 'POST /batches (JSON)', 'BatchCreated event', 'parameterised INSERT'" }
+    ]
+  },
+
+  "development_view": {
+    "description": "3-5 sentences: how the code is organised and which direction imports may run.",
+    "modules": [
+      {
+        "path": "Use the EXACT scaffold paths supplied in the context (e.g. 'backend/services/'). Do not invent a different layout.",
+        "responsibility": "One sentence naming what this package OWNS and what it is NOT allowed to do — the prohibition is the useful half, because it is what a reviewer can find violated. 'Every business rule and the transaction boundary; sees no HTTP type and opens no session of its own.' Never a bare phrase like 'Business rules.'",
+        "key_files": ["3-5 filenames from that package a reviewer should open first, shortest and most central first"],
+        "depends_on": ["other paths from the same supplied list"]
+      }
+    ]
+  },
+
+  "deployment_view": {
+    "description": "3-5 sentences: what runs where, and where state lives.",
+    "nodes": [
+      {
+        "name": "Node name",
+        "runtime": "Browser | Container | Managed database | Load balancer | Object store | Managed queue | …",
+        "hosts": [
+          {
+            "name": "The process or artefact that runs inside this node, named concretely",
+            "tech": "What it is built on, e.g. 'uvicorn + FastAPI', 'nginx', 'PostgreSQL 16'. '' if genuinely none.",
+            "detail": "4-9 words an on-call engineer needs: '2 replicas behind the load balancer'.",
+            "state": "Whether this process holds state, in under 10 words, because it decides whether the thing can be restarted, replaced or scaled out: 'stateless — nothing on local disk', 'stateful — the only durable copy', 'stateful — 7-day PITR'."
+          }
+        ],
+        "scaling": "How it scales and what its availability story is."
+      }
+    ],
+    "connections": [
+      {
+        "from": "exact name from nodes or hosts",
+        "to": "exact name",
+        "protocol": "HTTPS | HTTP | TCP | AMQP | gRPC | …",
+        "port": "The port number, or 'n/a' for a managed hop. This table is read as the security-group list, so guessing is worse than 'confirm'.",
+        "data": "What crosses this hop, in 3-8 words: 'Signed-in user requests', 'Parameterised queries and writes'."
+      }
+    ]
+  },
+
+  "development_framework": {
+    "description": "2-4 sentences on the stack as a whole.",
+    "components": [
+      { "layer": "Backend | Frontend | Persistence | Auth | AI/ML | Messaging | Testing | CI/CD | Observability", "technology": "Name", "version": "Version or '—'", "rationale": "Why this and not the obvious alternative." }
+    ]
+  },
+
+  "hardware_software_access": {
+    "hardware": [ { "item": "…", "specification": "…", "purpose": "…" } ],
+    "software": [ { "item": "…", "version": "…", "purpose": "…" } ],
+    "access":   [ { "item": "…", "granted_to": "…", "purpose": "…" } ]
+  },
+
+  "docker_deployment": {
+    "description": "2-4 sentences: what is containerised, and what is deliberately not.",
+    "services": [ { "name": "…", "image": "…", "ports": "…", "notes": "volumes, health check, env" } ],
+    "steps": ["5-8 ordered steps from a clean machine to a verified deployment"]
+  },
+
+  "coding_best_practices": [
+    { "area": "…", "practice": "The rule, stated so a reviewer can apply it", "why": "The concrete failure this prevents — not 'best practice'." }
+  ],
+
+  "ai_guardrails": [
+    { "control": "…", "implementation": "How it is actually enforced in this solution", "risk_addressed": "The specific risk, e.g. prompt injection via uploaded documents" }
+  ]
+}
+
+Rules:
+- 4-6 logical layers, 4-7 components in each, 10-18 flows. Every component needs all four of `name`, `tech`, `detail`, `interface` — a bare string is accepted but draws a one-line box, which is the vague result this document must not produce. Every `from`/`to` in `flows` MUST match a component `name` spelled exactly as it appears in `layers[].components`, or the edge is dropped from the diagram.
+- Every flow carries a `label`. An unlabelled arrow says only that two things talk, which is the "high level" this document is not.
+- `development_view.modules` MUST use the scaffold paths given in the context. Every `depends_on` entry must also be one of those paths. Give EVERY supplied path a module entry — a package with no `responsibility` falls back to a pointer at README.md, which is the thinnest box in the whole document.
+- `depends_on` is the import graph and the caller inverts it to show what each package is imported BY, so a missing edge costs two facts, not one. State the real imports even where they are obvious.
+- 4-7 deployment nodes, 2-4 hosts in each, 6-12 connections. Every `from`/`to` MUST match a `name` or a `hosts[].name` exactly. Every host needs a `state` — it is drawn in the box and read as the runbook's first column.
+- 6-10 coding best practices and 6-10 AI guardrails. Guardrails must be specific to this product's AI usage (or say plainly that the solution invokes no model, and cover data security instead).
+- Ground every choice in the supplied brief and documents. If the brief declares a stack, use it — do not substitute your preference.
+- All prose is plain text: no markdown, no bullet characters, no fences, no diagrams.

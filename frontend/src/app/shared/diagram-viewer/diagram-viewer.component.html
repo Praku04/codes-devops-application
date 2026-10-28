@@ -1,0 +1,126 @@
+<!--
+  The three-view switcher. Outside the viewer on purpose: it does not follow the image into
+  full screen, where the arrow keys and the `use` line below do the same job with less chrome.
+-->
+@if (showTabs) {
+  <div class="bp-tabs" role="tablist">
+    @for (t of views; track t.id) {
+      <button
+        type="button"
+        role="tab"
+        class="bp-tab"
+        [class.active]="active === t.id"
+        [attr.aria-selected]="active === t.id"
+        [title]="t.use"
+        (click)="select(t.id)"
+      >
+        <strong>{{ t.label }}</strong>
+        <span class="muted tiny">{{ t.hint }}</span>
+      </button>
+    }
+  </div>
+}
+
+<!--
+  Full screen asks the browser to promote *this* element (see `toggleFullscreen`), so it
+  escapes the card's transform instead of being clipped inside it; `fs` then lays it out. Same
+  DOM node either way, so the image and its scroll position survive going in and out.
+-->
+<div class="bp-viewer" [class.fs]="fullscreen" #viewer>
+  <!--
+    Whatever the caller wants pinned above the image — the wizard puts its "viewing v1 from the
+    change history" bar here. Inside the viewer so it follows it into full screen: an old
+    version on a full screen with no marker on it is indistinguishable from the current one.
+  -->
+  <ng-content></ng-content>
+
+  <!--
+    What this view is for. Inside the viewer so it is there in full screen and wherever there
+    is no tab strip to read it from.
+  -->
+  @if (activeView) {
+    <p class="bp-view-use tiny">
+      <strong>{{ activeView.label }}</strong> — {{ activeView.use }}
+    </p>
+  }
+
+  <div class="bp-viewer-controls">
+    <span class="bp-zoom">
+      <button type="button" class="ghost tiny" (click)="zoomOut()" title="Zoom out (Ctrl + wheel down)">
+        −
+      </button>
+      <span class="bp-zoom-value" [class.fit]="!zoom">{{ zoomLabel }}</span>
+      <button type="button" class="ghost tiny" (click)="zoomIn()" title="Zoom in (Ctrl + wheel up)">
+        +
+      </button>
+    </span>
+    <button
+      type="button"
+      class="ghost tiny"
+      [class.active]="!zoom"
+      (click)="zoomFit()"
+      title="Show the whole diagram"
+    >
+      Fit
+    </button>
+    <button
+      type="button"
+      class="ghost tiny"
+      [class.active]="zoom === 1"
+      (click)="zoomActual()"
+      title="Actual reading size"
+    >
+      100%
+    </button>
+    <button type="button" class="ghost tiny" (click)="toggleFullscreen()">
+      {{ fullscreen ? 'Exit full screen (Esc)' : 'Full screen' }}
+    </button>
+    <button type="button" class="ghost tiny" (click)="openInTab()" title="Open the PNG on its own">
+      Open PNG
+    </button>
+    <button type="button" class="ghost tiny" (click)="download()">Download PNG</button>
+  </div>
+
+  <div
+    class="bp-figure"
+    [class.panning]="panning"
+    (wheel)="onWheel($event)"
+    (mousedown)="startPan($event)"
+    (mousemove)="movePan($event)"
+    (mouseup)="endPan()"
+    (mouseleave)="endPan()"
+    (dblclick)="toggleZoom()"
+  >
+    @if (loading) {
+      <p class="muted">Loading the diagram…</p>
+    } @else if (activeUrl) {
+      <img
+        [src]="activeUrl"
+        [alt]="activeLabel + ' diagram for ' + (title || 'this process')"
+        [class.fit]="!zoom"
+        [style.width.px]="displayWidth"
+        [style.maxWidth.px]="zoom ? null : fitCap"
+        (load)="onLoad($event)"
+        draggable="false"
+      />
+    } @else {
+      <p class="muted">Rendering image…</p>
+    }
+  </div>
+
+  <div class="bp-figure-bar">
+    <span class="muted tiny">
+      {{ title }}
+      @if (caption) {
+        · {{ caption }}
+      }
+      @if (logicalWidth && logicalHeight) {
+        · {{ logicalWidth }}×{{ logicalHeight }}
+      }
+    </span>
+    <span class="muted tiny">
+      Drag to pan · Ctrl + wheel to zoom · double-click for 100% · ← → switch view ·
+      <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd> fit <kbd>1</kbd> 100% <kbd>f</kbd> full screen
+    </span>
+  </div>
+</div>

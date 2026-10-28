@@ -1,0 +1,701 @@
+<div class="admin-shell">
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">AgentCraft · Control room</p>
+      <h1>Super Admin</h1>
+      <p class="lede">
+        Approve signups, delete or restore accounts, and inspect what each user generated —
+        which context pipeline the session took, agents, skills and rules by name, and the
+        blueprint itself. You can also open the studio to create your own workspaces.
+      </p>
+    </div>
+    <div class="hero-actions">
+      <div class="who">
+        <span class="who-dot"></span>
+        {{ auth.user?.name || 'Super Admin' }}
+      </div>
+      <button type="button" class="btn approve" (click)="startNewWorkspace()">New workspace</button>
+      <button type="button" class="btn ghost" (click)="goStudio()">My sessions</button>
+      <button type="button" class="btn ghost" (click)="reload()" [disabled]="busy">
+        {{ busy ? 'Refreshing…' : 'Refresh' }}
+      </button>
+      <button type="button" class="btn ghost" (click)="auth.logout()">Log out</button>
+    </div>
+  </header>
+
+  <section class="stats">
+    <button type="button" class="stat" [class.on]="filter === 'pending'" (click)="setFilter('pending')">
+      <span class="stat-num warn">{{ pendingCount }}</span>
+      <span class="stat-label">Pending</span>
+    </button>
+    <button type="button" class="stat" [class.on]="filter === 'approved'" (click)="setFilter('approved')">
+      <span class="stat-num">{{ approvedCount }}</span>
+      <span class="stat-label">Approved</span>
+    </button>
+    <button type="button" class="stat" [class.on]="filter === 'rejected'" (click)="setFilter('rejected')">
+      <span class="stat-num danger">{{ rejectedCount }}</span>
+      <span class="stat-label">Rejected</span>
+    </button>
+    <button type="button" class="stat" [class.on]="filter === 'deleted'" (click)="setFilter('deleted')">
+      <span class="stat-num danger">{{ deletedCount }}</span>
+      <span class="stat-label">Deleted</span>
+    </button>
+    <button type="button" class="stat" [class.on]="filter === 'all'" (click)="setFilter('all')">
+      <span class="stat-num">{{ totalSessions }}</span>
+      <span class="stat-label">All sessions</span>
+    </button>
+  </section>
+
+  @if (error) {
+    <div class="banner danger">{{ error }}</div>
+  }
+  @if (success) {
+    <div class="banner ok">{{ success }}</div>
+  }
+
+  <div class="toolbar">
+    <div class="filters">
+      <button type="button" class="chip" [class.on]="filter === 'all'" (click)="setFilter('all')">
+        All users
+      </button>
+      <button type="button" class="chip" [class.on]="filter === 'pending'" (click)="setFilter('pending')">
+        Needs approval
+      </button>
+      <button type="button" class="chip" [class.on]="filter === 'approved'" (click)="setFilter('approved')">
+        Active
+      </button>
+      <button type="button" class="chip" [class.on]="filter === 'rejected'" (click)="setFilter('rejected')">
+        Rejected
+      </button>
+      <button type="button" class="chip" [class.on]="filter === 'deleted'" (click)="setFilter('deleted')">
+        Deleted @if (deletedCount) { <em class="chip-count">{{ deletedCount }}</em> }
+      </button>
+    </div>
+    <p class="muted tiny tip">
+      Click a user → expand sessions → click a session for its pipeline, agent / skill / rule
+      names, and the blueprint it approved — zoomable and full-screen, exactly as the user sees it.
+    </p>
+  </div>
+
+  @if (busy && !users.length) {
+    <p class="muted loading">Loading users…</p>
+  }
+
+  <div class="user-grid">
+    @for (u of filtered; track u.id; let i = $index) {
+      <article
+        class="user-card"
+        [class.open]="expandedUserId === u.id"
+        [class.pending]="u.status === 'pending'"
+        [class.deleted]="u.status === 'deleted'"
+        [style.animationDelay.ms]="cardDelay(i)"
+      >
+        <div class="user-row" (click)="toggleUser(u.id)">
+          <div class="avatar" [attr.data-status]="u.status">
+            {{ (u.name || u.email || '?').charAt(0).toUpperCase() }}
+          </div>
+          <div class="user-info">
+            <div class="name-line">
+              <h3>{{ u.name }}</h3>
+              <span class="badge" [attr.data-status]="u.status">{{ u.status }}</span>
+              @if (u.role === 'admin') {
+                <span class="badge admin">admin</span>
+              }
+            </div>
+            <p class="email">{{ u.email }}</p>
+            <p class="meta">
+              @if (u.status === 'deleted') {
+                <span>{{ u.session_count }} workspace{{ u.session_count === 1 ? '' : 's' }} held</span>
+              } @else {
+                <span>{{ u.session_count }} session{{ u.session_count === 1 ? '' : 's' }}</span>
+              }
+              @if (u.created_at) {
+                <span>· joined {{ formatIst(u.created_at) }}</span>
+              }
+            </p>
+            @if (u.status === 'deleted') {
+              <p class="meta deleted-meta">
+                <span>Deleted {{ formatIst(u.deleted_at) }}</span>
+                @if (u.deleted_by) {
+                  <span>· by {{ u.deleted_by }}</span>
+                }
+                @if (u.previous_status) {
+                  <span>· was {{ u.previous_status }}</span>
+                }
+              </p>
+            }
+          </div>
+          <span class="expand-ico" aria-hidden="true">{{ expandedUserId === u.id ? '−' : '+' }}</span>
+        </div>
+
+        @if (u.role !== 'admin') {
+          <div class="actions" (click)="$event.stopPropagation()">
+            @if (u.status === 'deleted') {
+              <!-- Deleted accounts are an archive: bring back, or erase for good. -->
+              @if (u.restorable !== false) {
+                <button
+                  type="button"
+                  class="btn approve"
+                  (click)="restore(u, $event)"
+                  [disabled]="actionId === u.id"
+                >
+                  {{ actionId === u.id ? 'Restoring…' : 'Restore user' }}
+                </button>
+              } @else {
+                <span class="muted tiny not-restorable">
+                  Deleted before restore existed — they must sign up again.
+                </span>
+              }
+              <button
+                type="button"
+                class="btn danger"
+                (click)="askPurge(u, $event)"
+                [disabled]="actionId === u.id"
+              >
+                Erase permanently
+              </button>
+            } @else {
+              @if (u.status !== 'approved') {
+                <button
+                  type="button"
+                  class="btn approve"
+                  (click)="approve(u, $event)"
+                  [disabled]="actionId === u.id"
+                >
+                  {{ actionId === u.id ? '…' : u.status === 'rejected' ? 'Restore access' : 'Approve access' }}
+                </button>
+              }
+              @if (u.status === 'pending') {
+                <button
+                  type="button"
+                  class="btn reject"
+                  (click)="askReject(u, $event)"
+                  [disabled]="actionId === u.id"
+                >
+                  Reject
+                </button>
+              }
+              <!-- Available for any non-admin account, approved ones included. -->
+              <button
+                type="button"
+                class="btn danger"
+                (click)="askDelete(u, $event)"
+                [disabled]="actionId === u.id"
+              >
+                Delete user
+              </button>
+            }
+          </div>
+        }
+
+        @if (expandedUserId === u.id) {
+          <div class="sessions">
+            <div class="sessions-head">
+              <h4>Workspaces</h4>
+              <span class="muted tiny">Read-only overview</span>
+            </div>
+
+            @if (!u.sessions.length) {
+              <p class="muted empty-sessions">No sessions yet.</p>
+            } @else {
+              @for (s of u.sessions; track s.id) {
+                <div class="session" [class.open]="expandedSessionId === s.id">
+                  <button type="button" class="session-btn" (click)="toggleSession(s, $event)">
+                    <div class="session-top">
+                      <strong>{{ s.name }}</strong>
+                      <span class="state">{{ stateLabel(s.state) }}</span>
+                      <!-- Which pipeline, on the collapsed row: it changes how everything
+                           below it should be read, so it must not be behind the expander. -->
+                      <span
+                        class="pipe-badge"
+                        [attr.data-path]="pipelineClass(s)"
+                        [title]="pipelineDetail(s)"
+                      >
+                        {{ pipelineLabel(s) }}
+                        @if (pipelineInferred(s)) {
+                          <em class="pipe-inferred" title="Deduced from the brief — this session predates the recorded path.">?</em>
+                        }
+                      </span>
+                      @if (s.has_diagrams) {
+                        <span class="bp-badge" [class.frozen]="s.diagrams_frozen">
+                          {{ blueprintChip(s) }}
+                        </span>
+                      }
+                      <span class="session-ico" aria-hidden="true">
+                        {{ expandedSessionId === s.id ? '−' : '+' }}
+                      </span>
+                    </div>
+                    <div class="session-meta">
+                      <span>{{ platformLabel(s.platform) }}</span>
+                      <!-- Rules are unconditional. Claude Code exports them too
+                           (.claude/rules/*.md, imported by CLAUDE.md), so hiding the count for
+                           that platform made a populated rules folder look empty here. -->
+                      <span class="counts">
+                        <em>{{ s.agent_count }}</em> agents ·
+                        <em>{{ s.skill_count }}</em> skills ·
+                        <em>{{ s.rule_count }}</em> rules
+                      </span>
+                      <!-- What the pipeline actually took in. Documents get their own block
+                           below; answers had nowhere to show at all before this. -->
+                      @if (s.path === 'interview' && s.interview_answer_count) {
+                        <span class="counts">
+                          <em>{{ s.interview_answer_count }}</em>
+                          answer{{ s.interview_answer_count === 1 ? '' : 's' }}
+                        </span>
+                      }
+                      @if (s.updated_at) {
+                        <span class="when">{{ formatIst(s.updated_at) }}</span>
+                      }
+                    </div>
+                  </button>
+
+                  @if (expandedSessionId === s.id) {
+                    <div class="artifacts">
+                      <!-- The pipeline in a sentence, first thing in the panel: whether the
+                           brief was built from documents or from the interview decides what
+                           everything under it means. -->
+                      <div class="pipe-strip" [attr.data-path]="pipelineClass(s)">
+                        <span class="pipe-strip-label">{{ pipelineLabel(s) }}</span>
+                        <span class="tiny">{{ pipelineDetail(s) }}</span>
+                        @if (pipelineInferred(s)) {
+                          <span class="muted tiny pipe-note">
+                            Deduced from what the workspace holds — this session was created
+                            before the path was recorded on the row.
+                          </span>
+                        }
+                      </div>
+
+                      @if (!hasArtifacts(s)) {
+                        <p class="muted tiny">No plan generated yet.</p>
+                      } @else {
+                        <div class="art-block">
+                          <p class="art-label">Agents ({{ s.agent_count }})</p>
+                          <div class="name-chips">
+                            @for (n of s.agent_names; track n) {
+                              <span class="chip-name agent">{{ n }}</span>
+                            }
+                            @if (!s.agent_names.length) {
+                              <span class="muted tiny">—</span>
+                            }
+                          </div>
+                        </div>
+                        <div class="art-block">
+                          <p class="art-label">Skills ({{ s.skill_count }})</p>
+                          <div class="name-chips">
+                            @for (n of s.skill_names; track n) {
+                              <span class="chip-name skill">{{ n }}</span>
+                            }
+                            @if (!s.skill_names.length) {
+                              <span class="muted tiny">—</span>
+                            }
+                          </div>
+                        </div>
+                        <div class="art-block">
+                          <p class="art-label">Rules ({{ s.rule_count }})</p>
+                          <div class="name-chips">
+                            @for (n of s.rule_names; track n) {
+                              <span class="chip-name rule">{{ n }}</span>
+                            }
+                            @if (!s.rule_names.length) {
+                              <span class="muted tiny">—</span>
+                            }
+                          </div>
+                        </div>
+                      }
+                      <!-- Outside the plan check on purpose: documents are uploaded before
+                           generation, so a session abandoned at AWAITING_DOCS still has them
+                           and that is precisely when an admin wants to see what came in. -->
+                      @if (s.document_names?.length) {
+                        <div class="art-block">
+                          <!-- No `?.` here: the @if above already narrowed it. -->
+                          <p class="art-label">Documents ({{ s.document_names.length }})</p>
+                          <div class="name-chips">
+                            @for (n of s.document_names; track n) {
+                              <span class="chip-name doc">{{ n }}</span>
+                            }
+                          </div>
+                        </div>
+                      }
+
+                      <!--
+                        The blueprint, in the same viewer the user has: the three views, zoom,
+                        fit, 100%, drag-to-pan and full screen, from `ac-diagram-viewer`. Read
+                        only — the admin can look at the process the user approved, and cannot
+                        redraw or approve it.
+                      -->
+                      <div
+                        class="art-block bp-block"
+                        (mouseenter)="claimKeyboard('blueprint')"
+                        (focusin)="claimKeyboard('blueprint')"
+                      >
+                        <p class="art-label">
+                          Blueprint
+                          @if (s.has_diagrams) {
+                            <span class="muted tiny">
+                              — v{{ s.diagram_version }},
+                              {{ s.diagrams_frozen ? 'approved by the user' : 'still a draft' }}
+                              @if (s.diagram_title) {
+                                · {{ s.diagram_title }}
+                              }
+                            </span>
+                          }
+                        </p>
+                        @if (!s.has_diagrams) {
+                          <p class="muted tiny">
+                            No blueprint was drawn — this workspace was generated straight from
+                            the brief, which the wizard allows.
+                          </p>
+                        } @else if (diagramError) {
+                          <p class="tiny danger">{{ diagramError }}</p>
+                        } @else if (diagramLoading && !diagramSet) {
+                          <p class="muted tiny">Loading the blueprint…</p>
+                        } @else if (diagramSet) {
+                          <ac-diagram-viewer
+                            [showTabs]="true"
+                            [active]="diagramKind"
+                            (activeChange)="showDiagramKind($event)"
+                            [urls]="activeDiagramUrls"
+                            [images]="diagramSet.images || []"
+                            [loading]="diagramLoading || historyLoading"
+                            [title]="diagramSet.model.title || s.name"
+                            [caption]="diagramCaption"
+                            [version]="historyVersion ?? diagramSet.version"
+                            [live]="keyboardOwner === 'blueprint'"
+                          ></ac-diagram-viewer>
+
+                          <!--
+                            What the follow-ups were allowed to touch.
+
+                            A version number says how often the user came back; it does not say
+                            what for. A change scoped to all three views rewrote the process, and
+                            therefore the agents generated from it; one scoped to a single view
+                            only re-drew that picture. Reviewing a workspace without that
+                            distinction means guessing, so each entry states it — and opens, so
+                            the claim can be checked against the image.
+                          -->
+                          <div class="bp-history">
+                            <p class="art-label sub">
+                              Change history
+                              <span class="muted tiny">— {{ followupSummary(s) }}</span>
+                            </p>
+                            @if (historyVersion !== null) {
+                              <div class="bp-history-bar">
+                                <span class="tiny">
+                                  Showing v{{ historyVersion }} as it was drawn, not the current
+                                  blueprint.
+                                </span>
+                                <button
+                                  type="button"
+                                  class="btn ghost tiny-btn"
+                                  (click)="backToLatest()"
+                                  [disabled]="historyLoading"
+                                >
+                                  Back to v{{ diagramSet.version }}
+                                </button>
+                              </div>
+                            }
+                            @for (r of diagramSet.revisions; track r.version) {
+                              <button
+                                type="button"
+                                class="bp-rev"
+                                [class.active]="isViewingRevision(r.version)"
+                                [class.current]="
+                                  r.version === diagramSet.version && historyVersion === null
+                                "
+                                [disabled]="historyLoading || r.viewable === false"
+                                (click)="viewRevision(r.version)"
+                                [attr.aria-pressed]="isViewingRevision(r.version)"
+                              >
+                                <span class="bp-rev-pill">v{{ r.version }}</span>
+                                <span class="bp-rev-body">
+                                  @if (r.instruction) {
+                                    <span class="bp-rev-instruction">“{{ r.instruction }}”</span>
+                                  } @else {
+                                    <span class="bp-rev-instruction muted">
+                                      Drawn from the brief
+                                    </span>
+                                  }
+                                  @if (r.summary) {
+                                    <span class="muted tiny">{{ r.summary }}</span>
+                                  }
+                                  <span
+                                    class="scope-tag"
+                                    [attr.data-scope]="revisionScopeKind(r)"
+                                  >{{ revisionScopeLabel(r) }}</span>
+                                </span>
+                                <span class="bp-rev-open tiny">
+                                  @if (r.viewable === false) {
+                                    Images not kept
+                                  } @else if (isViewingRevision(r.version)) {
+                                    Showing ✓
+                                  } @else if (r.version === diagramSet.version) {
+                                    Current
+                                  } @else {
+                                    View →
+                                  }
+                                </span>
+                              </button>
+                            }
+                          </div>
+                        }
+                      </div>
+
+                      <!--
+                        SDD §3.2's three architectural views, in the same viewer as the blueprint
+                        above — so an admin reviewing a session reads the software design with
+                        exactly the controls the owner has (fit, 100%, drag-to-pan, full screen,
+                        Open PNG, Download PNG, keyboard), not a shrunken thumbnail.
+
+                        A separate block from the blueprint, not a fourth tab on it: these answer
+                        a different question (what was designed, rather than what process was
+                        agreed), they carry no version, and a session can have one without the
+                        other. Read only, like everything else here.
+                      -->
+                      <div
+                        class="art-block bp-block"
+                        (mouseenter)="claimKeyboard('architecture')"
+                        (focusin)="claimKeyboard('architecture')"
+                      >
+                        <p class="art-label">
+                          Architecture
+                          @if (s.has_plan) {
+                            <span class="muted tiny">
+                              — SDD.md §3.2, drawn from this session's design
+                            </span>
+                          }
+                        </p>
+                        @if (!s.has_plan) {
+                          <p class="muted tiny">
+                            No design yet — the architectural views are drawn from the generated
+                            plan, so they appear once this session has been generated.
+                          </p>
+                        } @else if (architectureError) {
+                          <p class="tiny danger">{{ architectureError }}</p>
+                        } @else {
+                          <ac-diagram-viewer
+                            [views]="architectureViews"
+                            [showTabs]="true"
+                            [active]="architectureKind"
+                            (activeChange)="showArchitectureKind($event)"
+                            [urls]="architectureUrls"
+                            [scale]="architectureRenderScale"
+                            [loading]="architectureLoading"
+                            [title]="s.name"
+                            [caption]="architectureCaption"
+                            [downloadStem]="architectureKind + '-view'"
+                            [live]="keyboardOwner === 'architecture'"
+                          ></ac-diagram-viewer>
+                        }
+                        <!--
+                          The document those three figures live in, as a file to read or forward.
+                          Laid out from the markdown this session already holds — the same bytes
+                          the owner's own download gives them, so a review and a hand-off are
+                          reading one document. Offered whenever there is a plan, including when
+                          a view failed to draw: the text is the point.
+                        -->
+                        @if (s.has_plan) {
+                          <div class="art-doc-line">
+                            <span class="muted tiny">SDD.md as a document:</span>
+                            <button
+                              type="button"
+                              class="ghost tiny"
+                              (click)="downloadSolutionDesign(s, 'pdf', $event)"
+                              [disabled]="!!sddDownloading"
+                              title="This session's solution design as a PDF, with the three architecture views embedded."
+                            >
+                              {{ sddDownloading === 'pdf' ? 'Building PDF…' : 'Download PDF' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="ghost tiny"
+                              (click)="downloadSolutionDesign(s, 'docx', $event)"
+                              [disabled]="!!sddDownloading"
+                              title="The same document as a Word file — same content and layout, editable."
+                            >
+                              {{ sddDownloading === 'docx' ? 'Building DOCX…' : 'Download DOCX' }}
+                            </button>
+                            @if (sddDownloadMessage) {
+                              <span class="muted tiny">{{ sddDownloadMessage }}</span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+      </article>
+    }
+  </div>
+
+  @if (!busy && !filtered.length) {
+    <section class="empty-state">
+      @if (filter === 'deleted') {
+        <h2>No deleted accounts</h2>
+        <p class="muted">
+          Accounts you delete land here and can be restored with their workspaces, until you
+          erase them permanently.
+        </p>
+      } @else {
+        <h2>Nothing here</h2>
+        <p class="muted">No users match this filter.</p>
+      }
+      <button type="button" class="btn ghost" (click)="setFilter('all')">Show all users</button>
+    </section>
+  }
+
+  @if (pendingReject) {
+    <div class="modal-backdrop" (click)="cancelReject($event)" role="presentation">
+      <div
+        class="confirm-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reject-modal-title"
+        (click)="$event.stopPropagation()"
+      >
+        <h2 id="reject-modal-title">Reject this signup?</h2>
+        <p class="modal-lede">
+          <strong>{{ pendingReject.name || pendingReject.email }}</strong> will not be able to log in
+          to AgentCraft. You can approve them later from the Rejected filter.
+        </p>
+        <dl class="modal-meta">
+          <div>
+            <dt>Email</dt>
+            <dd>{{ pendingReject.email }}</dd>
+          </div>
+          <div>
+            <dt>Sessions</dt>
+            <dd>{{ pendingReject.session_count }}</dd>
+          </div>
+        </dl>
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="btn ghost"
+            (click)="cancelReject($event)"
+            [disabled]="actionId === pendingReject.id"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn reject"
+            (click)="confirmReject($event)"
+            [disabled]="actionId === pendingReject.id"
+          >
+            {{ actionId === pendingReject.id ? 'Rejecting…' : 'Yes, reject' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (pendingDelete) {
+    <div class="modal-backdrop" (click)="cancelDelete($event)" role="presentation">
+      <div
+        class="confirm-modal danger-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-modal-title"
+        (click)="$event.stopPropagation()"
+      >
+        <h2 id="delete-modal-title">Delete this user?</h2>
+        <p class="modal-lede">
+          <strong>{{ pendingDelete.name || pendingDelete.email }}</strong> loses access
+          immediately — their login stops working and any tab they have open is signed out
+          with “your account was deleted by the admin”.
+          @if (pendingDelete.session_count) {
+            Their <strong>{{ pendingDelete.session_count }}</strong>
+            workspace{{ pendingDelete.session_count === 1 ? '' : 's' }} are kept, so
+          } @else {
+            The account is kept in the archive, so
+          }
+          you can undo this from the <strong>Deleted</strong> tab.
+        </p>
+        <dl class="modal-meta">
+          <div>
+            <dt>Email</dt>
+            <dd>{{ pendingDelete.email }}</dd>
+          </div>
+          <div>
+            <dt>Sessions</dt>
+            <dd>{{ pendingDelete.session_count }}</dd>
+          </div>
+        </dl>
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="btn ghost"
+            (click)="cancelDelete($event)"
+            [disabled]="actionId === pendingDelete.id"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn danger"
+            (click)="confirmDelete($event)"
+            [disabled]="actionId === pendingDelete.id"
+          >
+            {{ actionId === pendingDelete.id ? 'Deleting…' : 'Yes, delete user' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (pendingPurge) {
+    <div class="modal-backdrop" (click)="cancelPurge($event)" role="presentation">
+      <div
+        class="confirm-modal danger-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="purge-modal-title"
+        (click)="$event.stopPropagation()"
+      >
+        <h2 id="purge-modal-title">Erase permanently?</h2>
+        <p class="modal-lede">
+          This deletes the archived account for
+          <strong>{{ pendingPurge.email }}</strong>
+          @if (pendingPurge.session_count) {
+            and all <strong>{{ pendingPurge.session_count }}</strong> held
+            workspace{{ pendingPurge.session_count === 1 ? '' : 's' }}
+          }
+          for good. <strong>Restore will no longer be possible</strong>, and they will get
+          the ordinary “invalid email or password” instead of a deletion notice.
+        </p>
+        <dl class="modal-meta">
+          <div>
+            <dt>Deleted</dt>
+            <dd>{{ formatIst(pendingPurge.deleted_at) }}</dd>
+          </div>
+          <div>
+            <dt>Workspaces</dt>
+            <dd>{{ pendingPurge.session_count }}</dd>
+          </div>
+        </dl>
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="btn ghost"
+            (click)="cancelPurge($event)"
+            [disabled]="actionId === pendingPurge.id"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn danger"
+            (click)="confirmPurge($event)"
+            [disabled]="actionId === pendingPurge.id"
+          >
+            {{ actionId === pendingPurge.id ? 'Erasing…' : 'Yes, erase forever' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

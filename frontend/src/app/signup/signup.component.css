@@ -1,0 +1,151 @@
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.auth-card {
+  width: min(420px, 100%);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.75rem 1.5rem 1.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.auth-card h1 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 2.4rem;
+  margin: 0.2rem 0 0.35rem;
+}
+
+.auth-card .eyebrow {
+  margin: 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+
+.auth-card label {
+  display: block;
+  margin: 0.85rem 0 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.auth-card input[type='email'],
+.auth-card input[type='password'],
+.auth-card input[type='text'] {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  outline: none;
+}
+
+.auth-card input:focus {
+  border-color: var(--accent-dim);
+}
+
+/* Password field with the reveal toggle sitting inside it. */
+.pw {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Room for the button so a long password never runs underneath it. Must come after the
+   input rules above — same specificity, so source order decides. */
+.auth-card .pw input {
+  padding-right: 3rem;
+}
+
+/* Every selector here is scoped to .auth-card to outweigh the global pill-button styles
+   (`button`, `button:hover:not(:disabled)`) without resorting to !important. */
+.auth-card .pw-eye {
+  position: absolute;
+  right: 0.4rem;
+  display: grid;
+  place-items: center;
+  padding: 0.4rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  line-height: 0;
+}
+
+.auth-card .pw-eye:hover,
+.auth-card .pw-eye.revealed {
+  color: var(--accent);
+  background: rgba(61, 207, 154, 0.1);
+  /* Cancel the global button lift — this one sits inside a field and must not move. */
+  transform: none;
+  box-shadow: none;
+}
+
+.auth-card .pw-eye:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.auth-card .pw-eye:focus-visible {
+  outline: 2px solid var(--accent-dim);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+
+.auth-card .pw-eye .slash {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.auth-card .pw-eye.revealed .slash {
+  opacity: 1;
+}
+
+.auth-card .actions {
+  margin-top: 1.25rem;
+}
+
+.auth-card .foot {
+  margin: 1.1rem 0 0;
+}
+
+.auth-card a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.banner {
+  margin: 0.75rem 0;
+  padding: 0.65rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.danger-bg {
+  background: rgba(224, 122, 106, 0.15);
+  border: 1px solid rgba(224, 122, 106, 0.35);
+  color: #f0c2ba;
+}
+
+.ok-bg {
+  background: rgba(61, 207, 154, 0.12);
+  border: 1px solid rgba(61, 207, 154, 0.35);
+  color: var(--accent);
+}
+
+.animate-in {
+  animation: rise 420ms ease both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

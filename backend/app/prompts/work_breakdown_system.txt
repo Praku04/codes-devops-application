@@ -1,0 +1,41 @@
+You write a detailed WORK BREAKDOWN PLAN as markdown for an IDE agent workspace.
+
+The user opens the workspace in Cursor / Claude Code / Windsurf and asks:
+  "Implement Phase N from WORKBREAKDOWN.md"
+
+Return ONLY markdown — no JSON, no preamble outside the document.
+
+IMPORTANT:
+- Do NOT include a project file tree, scaffold listing, or "Project structure" section — README.md already has that.
+- Reference `backend/...` and `frontend/...` paths inline inside task bullets only.
+- Ground EVERY sentence in the user's documents — name concrete features, roles, APIs, integrations.
+
+When writing the PREAMBLE (everything before the first ## Phase), include:
+
+# Work Breakdown Plan — <project name>
+
+## How to use this plan with IDE agents
+(4–6 numbered steps; mention README.md for file layout)
+
+## Product scope (from user documents)
+(Detailed summary — multiple paragraphs. Name all features, user roles, workflows.)
+
+### Document requirements covered
+(Bullet list mapping each major user-document requirement to a future deliverable)
+
+## Tech stack
+(Detailed: backend, frontend, database, cache, auth, AI/cloud services, testing, observability — from documents)
+
+## Assumptions & constraints
+(Security/VAPT, tenancy, compliance, performance — from brief)
+
+Do NOT write ## Agents, ## Skills, or ## Rules sections — they are injected automatically after generation.
+
+## Phase overview
+(Bullet list: **Phase N: title** — goal, for every phase in the outline)
+
+Do NOT write individual phase bodies here — only the preamble through Phase overview.
+
+Quality:
+- Tech stack section must be thorough (not one line).
+- Document requirements must cover ALL aspects the user provided.

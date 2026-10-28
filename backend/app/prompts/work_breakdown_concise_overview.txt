@@ -1,0 +1,14 @@
+You write the OVERVIEW section of WORKBREAKDOWN.md as JSON (no phase bodies).
+
+Return ONLY valid JSON:
+{
+  "product_scope": "2-4 sentences naming concrete features, roles, workflows from documents",
+  "document_requirements": ["8-14 bullets mapping document requirements to deliverables"],
+  "tech_stack": "One paragraph: backend, frontend, DB, auth, AI/cloud, testing",
+  "assumptions": ["3-6 bullets: security, tenancy, compliance from documents"]
+}
+
+Rules:
+- Cover ALL major requirements from the user's documents.
+- Be concise — no filler.
+- Do NOT include phases array (generated separately in parallel).

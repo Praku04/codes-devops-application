@@ -1,0 +1,2395 @@
+.shell {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 2rem var(--shell-pad) 4rem;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  /* Asymmetric on purpose. The 1rem still separates the wordmark from the status pill and the nav
+     chips beside it; the tighter row gap is for the tagline, which now takes a wrapped flex line of
+     its own directly under the wordmark and should read as attached to it. */
+  gap: 0.55rem 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.top-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+}
+
+.top-nav {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.nav-chip {
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.42rem 0.95rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition:
+    border-color 90ms ease-out,
+    background 90ms ease-out,
+    color 90ms ease-out,
+    transform 90ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.nav-chip:hover:not(:disabled) {
+  border-color: rgba(61, 207, 154, 0.55);
+  background: rgba(61, 207, 154, 0.14);
+  color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.nav-chip:active:not(:disabled) {
+  transform: scale(0.97);
+  box-shadow: none;
+  background: rgba(61, 207, 154, 0.2);
+  transition-duration: 40ms;
+}
+
+.nav-chip:focus-visible {
+  outline: 2px solid rgba(61, 207, 154, 0.65);
+  outline-offset: 2px;
+}
+
+.eyebrow {
+  margin: 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 6vw, 4rem);
+  margin: 0.2rem 0 0.35rem;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  /* Its own full-width row in `.top`. Inside `.brand-block` it was capped at 36ch and shared the
+     header with the pill and the chips, so the sentence wrapped; out here it has the whole shell
+     (up to `--shell-max` less `--shell-pad`), which is what makes one line possible at all. */
+  flex: 0 0 100%;
+  margin: 0;
+  color: var(--muted);
+  /* One line — and it stays one by shrinking, not by being short. `nowrap` on its own would push
+     the sentence off the right edge of a laptop window, so the size is tied to the viewport
+     instead: 0.95vw is well under what the shell can hold at every width this rule applies to, and
+     the 0.75rem floor keeps it legible on the narrowest of them. */
+  white-space: nowrap;
+  font-size: clamp(0.75rem, 0.95vw, 1rem);
+}
+
+/* Under ~1200px even the floor size no longer leaves the line room, and the two ways out are a
+   horizontal scrollbar on the whole document or a second row. A second row is plainly the lesser
+   evil, so below here the sentence wraps as it used to — with the width cap back, because a
+   full-bleed wrapped paragraph is the shape this change was made to get rid of. */
+@media (max-width: 1200px) {
+  .tagline {
+    white-space: normal;
+    max-width: 62ch;
+  }
+}
+
+.status-pill {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.status-pill.ok {
+  border-color: rgba(61, 207, 154, 0.45);
+  color: var(--accent);
+  background: rgba(61, 207, 154, 0.08);
+  box-shadow: 0 0 0 1px rgba(61, 207, 154, 0.08);
+}
+
+.status-pill.bad {
+  border-color: rgba(224, 122, 106, 0.5);
+  color: var(--danger);
+  background: rgba(224, 122, 106, 0.08);
+}
+
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.step .num {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--bg2);
+  font-size: 0.75rem;
+}
+
+.step.active {
+  color: var(--ink);
+  border-color: rgba(61, 207, 154, 0.45);
+  background: rgba(61, 207, 154, 0.08);
+}
+
+.step.done { color: var(--accent-dim); }
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+}
+
+.session-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+}
+
+.session-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  min-width: 0;
+}
+
+.session-name {
+  font-weight: 650;
+  font-size: 0.98rem;
+}
+
+.state-pill,
+.plat-pill {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.state-pill {
+  border-color: rgba(61, 207, 154, 0.4);
+  color: var(--accent);
+  background: rgba(61, 207, 154, 0.1);
+}
+
+.session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.meta-btn {
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 90ms ease-out, background 90ms ease-out, color 90ms ease-out,
+    transform 90ms ease-out;
+}
+
+.meta-btn:hover:not(:disabled) {
+  border-color: rgba(61, 207, 154, 0.5);
+  color: var(--accent);
+  background: rgba(61, 207, 154, 0.1);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+.meta-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 40ms;
+}
+
+.meta-btn.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #06140f;
+}
+
+.meta-btn.primary:hover {
+  background: #4fe0ad;
+  color: #06140f;
+  border-color: transparent;
+}
+
+.nav-chip.accent {
+  border-color: rgba(61, 207, 154, 0.45);
+  color: var(--accent);
+  background: rgba(61, 207, 154, 0.12);
+}
+
+.nav-chip.accent:hover {
+  background: rgba(61, 207, 154, 0.22);
+}
+
+.banner {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.danger-bg {
+  background: rgba(224, 122, 106, 0.15);
+  border: 1px solid rgba(224, 122, 106, 0.35);
+  color: #ffc2b8;
+}
+
+.stage h2 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 2rem;
+  margin: 0 0 0.4rem;
+}
+
+.stage label {
+  display: block;
+  margin: 1rem 0 0.4rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1.25rem;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.choice-grid.three { grid-template-columns: repeat(3, 1fr); }
+
+.choice {
+  text-align: left;
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  display: grid;
+  gap: 0.45rem;
+  transition: border-color 90ms ease-out, transform 90ms ease-out, background 90ms ease-out;
+}
+
+.choice:hover, .choice.selected {
+  border-color: rgba(61, 207, 154, 0.55);
+  transform: translateY(-2px);
+  background: rgba(61, 207, 154, 0.08);
+  box-shadow: none;
+}
+
+.choice:active:not(:disabled) {
+  transform: scale(0.985);
+  transition-duration: 40ms;
+}
+
+.dropzone {
+  margin-top: 1rem;
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--muted);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.dropzone.over,
+.dropzone.has-files {
+  border-color: var(--accent);
+  background: rgba(61, 207, 154, 0.08);
+}
+
+/* Attaching files — the dropzone stays the same height so nothing jumps. */
+.dropzone.attaching {
+  border-style: solid;
+  border-color: var(--accent);
+  background: rgba(61, 207, 154, 0.06);
+}
+
+.attach-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 2.9rem;
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.attach-spinner {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid rgba(61, 207, 154, 0.25);
+  border-top-color: var(--accent);
+  animation: spin 700ms linear infinite;
+}
+
+.file-btn.disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.attached-line {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.ok-tick {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/*
+ * Chip remove button.
+ *
+ * A square 22px target instead of the old pill so the × sits inside the chip, and the
+ * press state is a colour swap only — no transform, so removing a chip never nudges the
+ * ones beside it while the click is registering.
+ */
+.chip-x {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+  transition: background 60ms ease-out, color 60ms ease-out, border-color 60ms ease-out;
+}
+
+.chip-x:hover:not(:disabled) {
+  background: rgba(224, 122, 106, 0.2);
+  border-color: rgba(224, 122, 106, 0.6);
+  color: #ffd2ca;
+  transform: none;
+  box-shadow: none;
+}
+
+.chip-x:active:not(:disabled) {
+  background: rgba(224, 122, 106, 0.34);
+  transform: none;
+  transition-duration: 20ms;
+}
+
+/* "Remove all" — a text action, not a second competing button. */
+.link-btn {
+  margin-left: 0.35rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-btn:hover:not(:disabled) {
+  transform: none;
+  background: none;
+  box-shadow: none;
+  color: #7ff0c4;
+}
+
+.req {
+  color: #ff8f7a;
+  font-weight: 700;
+}
+
+.formats-hint {
+  margin: 0.25rem 0 0.6rem;
+}
+
+.file-reject {
+  margin: 0.75rem 0 0;
+  color: #ffc2b8;
+  font-size: 0.88rem;
+}
+
+/* Documents persisted with the project (survives Back / reload / new session). */
+.saved-docs {
+  margin-top: 0.9rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(61, 207, 154, 0.04);
+}
+
+.saved-docs-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.saved-docs .upload-chips {
+  margin: 0;
+}
+
+/* Restored-state notices: statement came back, files must be re-attached. */
+.reupload-note,
+.draft-note {
+  margin: 0.7rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 2px solid rgba(126, 168, 255, 0.55);
+  border-radius: 0 6px 6px 0;
+  background: rgba(126, 168, 255, 0.08);
+  line-height: 1.5;
+}
+
+.upload-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ext-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  background: rgba(61, 207, 154, 0.18);
+  color: var(--accent);
+}
+
+.file-name {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-btn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.chips {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+}
+
+.chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+
+/* Small but still comfortably clickable — tap target stays >= 28px tall. */
+button.tiny {
+  padding: 0.35rem 0.7rem;
+  min-height: 1.9rem;
+  font-size: 0.78rem;
+  line-height: 1.1;
+}
+
+.progress {
+  height: 6px;
+  background: var(--bg2);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.75rem 0;
+}
+
+.progress .bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+  transition: width 280ms ease;
+}
+
+.q-card h3 {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.q-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.q-id {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.q-badge {
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.q-badge.required {
+  color: var(--warn);
+  border-color: rgba(232, 184, 109, 0.4);
+  background: rgba(232, 184, 109, 0.1);
+}
+
+.q-title-label {
+  display: block;
+  margin: 0.25rem 0 0.35rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.q-title-input {
+  margin-bottom: 0.35rem;
+}
+
+.center { text-align: center; }
+
+.gen-stage { padding-bottom: 2rem; }
+
+.gen-note {
+  margin: 0.35rem auto 1rem;
+  max-width: 34rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.gen-wait-hint {
+  margin: 0.35rem 0 0;
+  max-width: 28rem;
+}
+
+.spinner-wrap {
+  margin: 1.5rem auto 0.5rem;
+  max-width: 420px;
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+}
+
+.orbit {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0.5rem auto 0.75rem;
+}
+
+.core {
+  position: absolute;
+  inset: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #9af0c9, var(--accent) 55%, var(--accent-dim));
+  box-shadow: 0 0 28px rgba(61, 207, 154, 0.45);
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+.ring {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-right-color: rgba(232, 184, 109, 0.65);
+  animation: spin 1.2s linear infinite;
+}
+
+.ring-b {
+  inset: 22px;
+  animation-duration: 1.8s;
+  animation-direction: reverse;
+  border-top-color: rgba(232, 184, 109, 0.9);
+  border-right-color: var(--accent);
+}
+
+.planet {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: #e8b86d;
+  box-shadow: 0 0 12px rgba(232, 184, 109, 0.8);
+  animation: spin 1.2s linear infinite;
+  transform-origin: 5px 54px;
+}
+
+.gen-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.45rem;
+}
+
+.gen-progress {
+  margin: 0;
+  color: var(--accent);
+  min-height: 1.4em;
+  font-size: 0.95rem;
+}
+
+.pulse-dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.pulse-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.35;
+  animation: dot 1.2s ease-in-out infinite;
+}
+
+.pulse-dots i:nth-child(2) { animation-delay: 0.2s; }
+.pulse-dots i:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(0.92); opacity: 0.85; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes dot {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
+
+.check {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem auto !important;
+}
+
+.animate-in {
+  animation: rise 420ms ease both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.review-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.review-title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.review-title-block h2 {
+  margin: 0 0 0.75rem;
+}
+
+.summary-card {
+  border: 1px solid rgba(61, 207, 154, 0.22);
+  background:
+    linear-gradient(145deg, rgba(61, 207, 154, 0.08), transparent 55%),
+    rgba(0, 0, 0, 0.28);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  /* 72ch is still one comfortable measure, and it keeps the card in proportion to the wider
+   * shell instead of sitting in it as a narrow strip. */
+  max-width: 72ch;
+}
+
+.summary-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.summary-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.summary-prose {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.55;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+}
+
+.summary-edit {
+  width: 100%;
+  min-height: 5.5rem;
+  margin: 0;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.prompt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.55rem;
+  margin: 0.35rem 0 1rem;
+}
+
+.prompt-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  text-align: left;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--ink);
+  box-shadow: none;
+  transition: border-color 90ms ease-out, background 90ms ease-out, transform 90ms ease-out;
+  touch-action: manipulation;
+}
+
+.prompt-card:hover {
+  border-color: rgba(61, 207, 154, 0.4);
+  transform: none;
+}
+
+.prompt-card:active:not(:disabled) {
+  transform: scale(0.985);
+  transition-duration: 40ms;
+}
+
+.prompt-card.on {
+  border-color: rgba(61, 207, 154, 0.55);
+  background: rgba(61, 207, 154, 0.1);
+}
+
+.docs-card {
+  position: relative;
+  transition: min-height 280ms ease;
+}
+
+.docs-card.brief-ready {
+  min-height: 28rem;
+}
+
+.statement-box {
+  width: 100%;
+  transition: min-height 240ms ease;
+}
+
+.statement-box.statement-tall {
+  min-height: 18rem;
+}
+
+.expand-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.55rem;
+  border-radius: inherit;
+  background: rgba(6, 18, 14, 0.82);
+  backdrop-filter: blur(6px);
+  animation: rise 280ms ease both;
+}
+
+.expand-spinner {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 0.35rem;
+}
+
+.expand-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-right-color: rgba(61, 207, 154, 0.35);
+  animation: spin 0.9s linear infinite;
+}
+
+.expand-core {
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #7dffc8, var(--accent) 55%, transparent 70%);
+  animation: breathe 1.4s ease-in-out infinite;
+  box-shadow: 0 0 24px rgba(61, 207, 154, 0.35);
+}
+
+.expand-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.35rem;
+}
+
+.expand-bars {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.expand-bars span {
+  width: 28px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(61, 207, 154, 0.25);
+  animation: barPulse 1.1s ease-in-out infinite;
+}
+
+.expand-bars span:nth-child(2) { animation-delay: 0.12s; }
+.expand-bars span:nth-child(3) { animation-delay: 0.24s; }
+.expand-bars span:nth-child(4) { animation-delay: 0.36s; }
+
+.expand-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  max-width: 28rem;
+  margin: 0.35rem 0 0.15rem;
+}
+.expand-chip {
+  font-size: 0.72rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(61, 207, 154, 0.28);
+  color: var(--muted);
+  background: rgba(12, 28, 22, 0.65);
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+.expand-chip.pending {
+  animation: pulse-chip 1.1s ease-in-out infinite;
+}
+.expand-chip.done {
+  color: #0b1a14;
+  background: var(--accent);
+  border-color: var(--accent);
+  animation: none;
+}
+.expand-chip.fail {
+  color: #ffb4b4;
+  border-color: rgba(255, 120, 120, 0.45);
+  background: rgba(80, 20, 20, 0.45);
+  animation: none;
+}
+@keyframes pulse-chip {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@keyframes barPulse {
+  0%, 100% { background: rgba(61, 207, 154, 0.2); transform: scaleX(0.85); }
+  50% { background: rgba(61, 207, 154, 0.85); transform: scaleX(1); }
+}
+
+.brief-panel {
+  border: 1px solid rgba(61, 207, 154, 0.28);
+  border-radius: 14px;
+  background:
+    linear-gradient(160deg, rgba(61, 207, 154, 0.1), transparent 45%),
+    rgba(0, 0, 0, 0.28);
+  padding: 0.85rem;
+  margin-top: 0.35rem;
+  max-height: min(72vh, 720px);
+  overflow: auto;
+}
+
+.brief-panel-interactive {
+  padding: 1rem 1.05rem 1.1rem;
+}
+
+.brief-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.brief-panel-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 2;
+}
+
+.brief-sections {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.brief-section {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 90ms ease-out, background 90ms ease-out, box-shadow 120ms ease-out;
+}
+
+.brief-section:hover {
+  border-color: rgba(61, 207, 154, 0.35);
+  background: rgba(61, 207, 154, 0.05);
+}
+
+.brief-section.open {
+  cursor: default;
+  border-color: rgba(61, 207, 154, 0.5);
+  background: rgba(61, 207, 154, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(61, 207, 154, 0.12);
+}
+
+.brief-section-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  box-shadow: none;
+  padding: 0.85rem 0.35rem 0.85rem 1rem;
+  text-align: left;
+  border-radius: 0;
+  min-height: 3rem;
+}
+
+.brief-section-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-right: 0.55rem;
+}
+
+.brief-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.brief-section.editing {
+  border-color: rgba(61, 207, 154, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(61, 207, 154, 0.18);
+}
+
+.brief-section-edit {
+  width: 100%;
+  min-height: 14rem;
+  resize: vertical;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(61, 207, 154, 0.35);
+  background: rgba(0, 0, 0, 0.4);
+  margin-bottom: 0.45rem;
+}
+
+.brief-section-body .md-preview {
+  line-height: 1.6;
+}
+
+.brief-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.brief-chevron {
+  color: var(--accent);
+  font-size: 0.85rem;
+  width: 0.9rem;
+}
+
+.brief-sec-index {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.brief-toggle-label {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: var(--accent);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(61, 207, 154, 0.35);
+  background: rgba(61, 207, 154, 0.08);
+}
+
+.brief-section.open .brief-toggle-label {
+  color: var(--muted);
+  border-color: var(--line);
+  background: transparent;
+}
+
+.brief-section-toggle:hover {
+  background: transparent;
+  transform: none;
+}
+
+.brief-section-preview {
+  margin: 0 1rem 0.85rem;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.brief-section-body {
+  padding: 0.35rem 1.05rem 1.05rem;
+  line-height: 1.6;
+  color: var(--ink);
+  font-size: 0.95rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  animation: rise 220ms ease both;
+  max-height: min(42vh, 420px);
+  overflow: auto;
+}
+
+.interview-answer-box {
+  width: 100%;
+  min-height: 9rem;
+  resize: vertical;
+  line-height: 1.55;
+  font-size: 0.95rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(61, 207, 154, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(61, 207, 154, 0.06);
+}
+
+.interview-answer-box.interview-answer-tall {
+  min-height: min(58vh, 28rem);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.brief-section-body p {
+  margin: 0.4rem 0;
+}
+
+.brief-section-body ul {
+  margin: 0.35rem 0 0.15rem;
+  padding-left: 1.15rem;
+}
+
+.brief-section-body li {
+  margin: 0.28rem 0;
+}
+
+.brief-section-body strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.brief-section-body em {
+  font-style: italic;
+  color: #d7ebe2;
+}
+
+.brief-section-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  background: rgba(61, 207, 154, 0.12);
+}
+
+.brief-section-body h4,
+.brief-section-body h5,
+.brief-section-body h6 {
+  margin: 0.55rem 0 0.25rem;
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
+.brief-fallback {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.file-tree-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.35rem 0.55rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0.35rem;
+}
+
+.file-editor-actions {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.save-file-btn {
+  border: none;
+  background: var(--accent);
+  color: #06140f;
+  border-radius: 999px;
+  padding: 0.28rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-file-btn:hover:not(:disabled) {
+  background: #4fe0ad;
+}
+
+.save-file-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.body-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.body-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.card-save-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.md-preview {
+  /* Table rules are their own colour, not `--line`. `--line` is 12% white, which is right for
+     a card edge and invisible as a grid — the reported "tables don't show properly" was a
+     table that had rendered and could not be seen. */
+  --md-grid: rgba(232, 240, 236, 0.24);
+  --md-grid-strong: rgba(61, 207, 154, 0.45);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 0.85rem 1rem;
+  max-height: min(64vh, 680px);
+  overflow: auto;
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+/*
+ * ────────────────────────────────────────────────────────────────────────────────────────────
+ * EVERYTHING INSIDE A PREVIEW NEEDS `::ng-deep`. This is not style — it is load-bearing.
+ *
+ * The preview's content is set with `[innerHTML]` (`formatMarkdown` → `bypassSecurityTrustHtml`),
+ * so those nodes are created by the browser, not by Angular's template compiler, and they carry
+ * no `_ngcontent-*` attribute. Emulated encapsulation appends that attribute to *every* compound
+ * selector in a chain, so a plain `.md-preview .md-table th` compiles to
+ * `.md-preview[_ngcontent-x] .md-table[_ngcontent-x] th[_ngcontent-x]` and therefore matches
+ * nothing at all. `::ng-deep` stops the scoping at that point and leaves
+ * `.md-preview[_ngcontent-x] .md-table th` — still confined to this component's panes, but able
+ * to reach injected DOM.
+ *
+ * That one detail is what made three reported bugs look unrelated: tables "not showing
+ * properly" (they had no rules, so no grid), figures overflowing the pane sideways (the width
+ * rule never applied), and prose running the full width (the 112ch measure never applied). The
+ * HTML was right in every case; the stylesheet could not see it. `verify:markdown` now fails if
+ * a `.md-preview` descendant rule is written without `::ng-deep`.
+ * ────────────────────────────────────────────────────────────────────────────────────────────
+ *
+ * Prose inside a rendered file keeps a measure even though the pane around it is now much
+ * wider; code blocks and tables deliberately do not, because wrapping those to 112ch would
+ * hide the thing you opened the file to check.
+ */
+.md-preview ::ng-deep p,
+.md-preview ::ng-deep li,
+.md-preview ::ng-deep blockquote {
+  max-width: var(--read-max);
+}
+
+.md-preview ::ng-deep p { margin: 0.35rem 0; }
+.md-preview ::ng-deep ul, .md-preview ::ng-deep ol {
+  margin: 0.25rem 0 0.45rem;
+  padding-left: 1.15rem;
+}
+.md-preview ::ng-deep li { margin: 0.12rem 0; }
+.md-preview ::ng-deep strong { color: var(--accent); font-weight: 600; }
+.md-preview ::ng-deep code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  background: rgba(61, 207, 154, 0.12);
+}
+.md-preview ::ng-deep h3,
+.md-preview ::ng-deep h4,
+.md-preview ::ng-deep h5,
+.md-preview ::ng-deep h6 {
+  margin: 0.85rem 0 0.35rem;
+  color: var(--accent);
+  font-size: 1rem;
+}
+.md-preview ::ng-deep h3:first-child,
+.md-preview ::ng-deep h4:first-child {
+  margin-top: 0;
+}
+.md-preview ::ng-deep blockquote {
+  margin: 0.35rem 0;
+  padding: 0.15rem 0.75rem;
+  border-left: 3px solid rgba(61, 207, 154, 0.45);
+  color: var(--muted);
+}
+.md-preview ::ng-deep .md-code {
+  margin: 0.5rem 0 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--line);
+  overflow: auto;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  white-space: pre;
+  color: var(--ink);
+}
+.md-preview ::ng-deep .md-code code {
+  padding: 0;
+  background: transparent;
+  font-size: inherit;
+  color: inherit;
+}
+/*
+ * Tables.
+ *
+ * The wrapper scrolls instead of the cells wrapping: a requirement table is four columns of
+ * sentences, and squeezing it into the pane turned every row into five lines. `max-width` is
+ * deliberately absent (see the note above `.md-preview p`) — a table you have to nudge
+ * sideways still reads; one folded to 112ch does not.
+ */
+.md-preview ::ng-deep .md-table-wrap {
+  margin: 0.5rem 0 0.7rem;
+  overflow-x: auto;
+  border: 1px solid var(--md-grid);
+  border-radius: 8px;
+}
+.md-preview ::ng-deep .md-table {
+  /* `separate` with a zero gap, not `collapse`: a sticky header cell loses its own borders
+     under `collapse` (the collapsed border belongs to the table, which scrolls away), and a
+     header row that keeps its rule while the body moves under it is the whole point. */
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+/* A full grid — every cell ruled on all four sides, like a table in a markdown preview.
+   Column separators matter more here than anywhere else in the app: SDD.md's requirement
+   table is a narrow `ID`, two words of name and then four lines of description, and without a
+   vertical rule the eye reads the wrap as the next column. */
+.md-preview ::ng-deep .md-table th,
+.md-preview ::ng-deep .md-table td {
+  padding: 0.4rem 0.6rem;
+  border-right: 1px solid var(--md-grid);
+  border-bottom: 1px solid var(--md-grid);
+  text-align: left;
+  vertical-align: top;
+}
+.md-preview ::ng-deep .md-table th:last-child,
+.md-preview ::ng-deep .md-table td:last-child {
+  border-right: none;
+}
+.md-preview ::ng-deep .md-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.md-preview ::ng-deep .md-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  /* Opaque, not a translucent tint: the rows scroll underneath it. */
+  background: #0f1c17;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom-color: var(--md-grid-strong);
+}
+.md-preview ::ng-deep .md-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+.md-preview ::ng-deep .md-table code {
+  white-space: nowrap;
+}
+
+.md-preview ::ng-deep a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/*
+ * An embedded figure — SDD §3.2's architecture views, fetched as a blob (see
+ * `ensureArchitectureImages`). Light background because the renders are drawn on white.
+ *
+ * `width: 100%` and not `max-width` alone: these PNGs are drawn at 3× (2526–2688 px wide), so
+ * `max-width: 100%` scaled them down but nothing scaled them *up* — and left to their natural
+ * size in a pane that scrolls, the first figure ran off the right edge of §3.2 and put a
+ * horizontal scrollbar under the whole document. Full pane width, aspect ratio kept by
+ * `height: auto`, and `zoom-in` because clicking opens it in the viewer (`onPreviewClick`).
+ */
+.md-preview ::ng-deep .md-image {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 0.5rem 0 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  cursor: zoom-in;
+}
+/*
+ * A figure on its own line comes out as `<p><img></p>`, and the prose rule above caps a
+ * paragraph at 112ch — which would have made "100% wide" mean 112ch wide. Same exemption
+ * tables and code blocks get, and for the same reason. `:has` is already load-bearing in
+ * `styles.css` (`.card:has(.bp-viewer.fs)`).
+ */
+.md-preview ::ng-deep p:has(> .md-image) {
+  max-width: none;
+}
+/* Shown while the bytes are in flight, or when a path resolves to nothing this client can
+ * fetch — a named placeholder rather than a broken-image icon. */
+.md-preview ::ng-deep .md-image-pending {
+  display: inline-block;
+  padding: 0.3rem 0.55rem;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+/*
+ * The same three views opened as their own file from the tree have no rules here any more:
+ * they are drawn by `ac-diagram-viewer` (see `archViewerTpl`), which brings its own stylesheet
+ * along with fit / 100% / pan / full screen. The rules that used to live here capped the image
+ * at 62vh, which is what left a 2526 × 3078 render sitting 540px wide in a much wider pane.
+ */
+
+/* A `---` between sections. One hairline, not the browser's default inset 3D groove. */
+.md-preview ::ng-deep .md-rule {
+  height: 0;
+  margin: 1.15rem 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* Injected by `formatMarkdown` too, so it needs the same reach — see the `::ng-deep` note. */
+.md-preview ::ng-deep .md-frontmatter {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(61, 207, 154, 0.08);
+  border: 1px solid rgba(61, 207, 154, 0.2);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  color: var(--muted);
+}
+
+/*
+ * Folder row.
+ *
+ * Transitions only colour: the global button rule presses with translateY + scale,
+ * which shrank the whole row under the pointer just as the click landed and made
+ * expanding feel laggy. Rows are also content-visibility candidates only in bulk —
+ * kept simple here so a 139-file tree paints in one frame.
+ */
+.tree-folder-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  box-shadow: none;
+  padding: 0.3rem 0.35rem;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 0.85rem;
+  transition: background 60ms ease-out, color 60ms ease-out;
+}
+
+.tree-folder-btn:hover:not(:disabled) {
+  background: rgba(61, 207, 154, 0.08);
+  transform: none;
+  box-shadow: none;
+}
+
+.tree-folder-btn:active:not(:disabled) {
+  background: rgba(61, 207, 154, 0.16);
+  transform: none;
+  box-shadow: none;
+  transition-duration: 20ms;
+}
+
+/* One glyph rotated rather than swapping ▸/▾ — no text reflow mid-click. */
+.tree-chevron {
+  width: 0.9rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  transition: transform 110ms ease-out, color 110ms ease-out;
+}
+
+.tree-chevron.open {
+  transform: rotate(90deg);
+  color: var(--accent);
+}
+
+/* Long folder names truncate rather than pushing the child count out of the pane. */
+.tree-folder-name {
+  font-weight: 600;
+  color: var(--accent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-file {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tree-chevron { transition-duration: 1ms; }
+}
+
+.review-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 160px;
+}
+
+.save-plan-btn {
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 90ms ease-out, border-color 90ms ease-out, color 90ms ease-out,
+    box-shadow 120ms ease-out, transform 90ms ease-out;
+}
+
+.save-plan-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 40ms;
+}
+
+.save-plan-btn.needs-save {
+  background: var(--accent);
+  border-color: transparent;
+  color: #06140f;
+  box-shadow: 0 0 0 2px rgba(61, 207, 154, 0.35);
+}
+
+.save-plan-btn.needs-save:hover:not(:disabled) {
+  background: #4fe0ad;
+}
+
+.save-plan-btn.is-saved:disabled {
+  opacity: 0.75;
+  cursor: default;
+  border-color: rgba(61, 207, 154, 0.45);
+  color: var(--accent);
+  background: rgba(61, 207, 154, 0.12);
+}
+
+.save-msg {
+  color: var(--accent);
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.tabs .ghost.on {
+  border-color: rgba(61, 207, 154, 0.5);
+  color: var(--accent);
+}
+
+.item {
+  border-top: 1px solid var(--line);
+  padding: 0.85rem 0;
+}
+
+.item-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: left;
+  background: transparent;
+  color: var(--ink);
+  border: none;
+  border-radius: 8px;
+  padding: 0.35rem 0.2rem;
+  box-shadow: none;
+}
+
+.item-toggle:hover {
+  background: rgba(61, 207, 154, 0.06);
+  transform: none;
+}
+
+.item-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.item.editable.open {
+  background: rgba(61, 207, 154, 0.04);
+  border-radius: 10px;
+  padding-inline: 0.55rem;
+  margin-inline: -0.35rem;
+}
+
+.line-chip {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.line-chip.ok {
+  border-color: rgba(61, 207, 154, 0.45);
+  color: var(--accent);
+}
+
+.line-chip.warn,
+.tiny.warn {
+  border-color: rgba(224, 122, 106, 0.55);
+  color: var(--danger);
+}
+
+/*
+ * Bounded by the measure, not by the card. This paragraph is three dense sentences of counts
+ * and rules; across the full width of a 1600px shell it becomes two ~200-character lines and
+ * the eye loses the start of the next one on the way back.
+ */
+.review-hint {
+  margin: 0.35rem 0 0.85rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.45;
+  max-width: var(--read-max);
+}
+
+.review-hint code {
+  font-size: 0.8em;
+}
+
+.rule-flags {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.rule-flags .check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.example-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.35rem 0 1rem;
+}
+
+.code-edit {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  min-height: 12rem;
+}
+
+.tiny { font-size: 0.8rem; }
+
+/*
+ * The tree is a fixed band, not a percentage. At 32% of a 1600px shell it would have been a
+ * 500px column of 24-character filenames padded with empty space, stealing the width from the
+ * editor beside it — the one pane where more room is worth something. `minmax` keeps it from
+ * collapsing on a narrow window and the extra width now all lands on the file.
+ */
+.file-browser {
+  display: grid;
+  grid-template-columns: minmax(180px, 320px) 1fr;
+  gap: 0.75rem;
+  min-height: 460px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.file-browser.compact { min-height: 320px; margin-top: 1rem; }
+
+/*
+ * Sized against the window rather than a flat 520px: a 137-file workspace in a 520px box is
+ * six visible rows and a lot of scrolling, and the space to fix that is already on the screen.
+ * Still capped, so the tree cannot outgrow the card on a very tall display.
+ */
+.file-list {
+  border-right: 1px solid var(--line);
+  overflow: auto;
+  max-height: min(64vh, 680px);
+  padding: 0.4rem;
+}
+
+.file-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: #c8ddd2;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  box-shadow: none;
+}
+
+.file-item:hover, .file-item.on {
+  background: rgba(61, 207, 154, 0.12);
+  color: var(--ink);
+  transform: none;
+}
+
+/* Same as the folder rows: colour-only press, so a click never nudges the list. */
+.file-item:active:not(:disabled) {
+  background: rgba(61, 207, 154, 0.2);
+  transform: none;
+  box-shadow: none;
+  transition-duration: 20ms;
+}
+
+/*
+ * Each row is one line and lays itself out independently, so `contain` lets the
+ * browser skip re-measuring the rest of the tree when rows are spliced in on expand.
+ */
+.tree-file, .tree-folder-btn {
+  contain: layout;
+  white-space: nowrap;
+}
+
+.tree-file {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-editor {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.file-editor-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.file-body { flex: 1; min-height: 420px; }
+
+/*
+  The editor and the preview both stay mounted and take turns being [hidden], so that
+  toggling Edit is a style flip rather than a re-parse of the whole file into DOM. The
+  UA's [hidden] rule is display:none, but a class that sets its own display would win on
+  specificity — so state it here where it cannot be overridden by accident.
+*/
+.file-body[hidden] { display: none; }
+
+.file-preview {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.78rem;
+  color: #cfe0d7;
+  overflow: auto;
+  /* Matches the tree beside it, so the two columns end on the same line. */
+  max-height: min(64vh, 680px);
+}
+
+/* ── Process blueprint (SIPOC / flow / swimlane) ───────────────────────────── */
+
+.ok-bg {
+  background: rgba(61, 207, 154, 0.12);
+  border: 1px solid rgba(61, 207, 154, 0.35);
+  color: #a8e8cd;
+}
+
+.warn-bg {
+  background: rgba(232, 184, 109, 0.14);
+  border: 1px solid rgba(232, 184, 109, 0.38);
+  color: #f0d6a4;
+}
+
+.bp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.bp-head-text { min-width: 0; }
+
+.bp-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+}
+
+.bp-pill {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.22);
+  white-space: nowrap;
+}
+
+.bp-pill.ok {
+  border-color: rgba(61, 207, 154, 0.5);
+  color: var(--accent);
+}
+
+.bp-pill.warn {
+  border-color: rgba(232, 184, 109, 0.5);
+  color: var(--warn);
+}
+
+.bp-empty-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin: 1.25rem 0 1rem;
+}
+
+.bp-empty-tile {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.9rem;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+/*
+ * The three-view switcher, the viewer, its zoom controls and the figure pane now live in
+ * `app/shared/diagram-viewer/` — the wizard renders `<ac-diagram-viewer>` and the admin
+ * console renders the same component, so there is one stylesheet for the picture instead of
+ * two that drift. Only the wizard's own blueprint chrome is left here.
+ */
+
+/*
+ * What each view is for. Slightly brighter than `.muted` and separated by a rule from the
+ * structural subtitle above it: the subtitle names the parts, this sentence says why the
+ * reader is looking at them, and they read as two different things.
+ */
+.bp-tile-use {
+  color: rgba(214, 231, 223, 0.82);
+  line-height: 1.5;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* The exported filenames, listed under the Diagrams tab so the zip and the screen match. */
+.bp-file-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  margin-top: 0.6rem;
+}
+
+/* The PDF / DOCX pair below those filenames. Its own line, and vertically centred with the
+   status note beside it, which the filename row above has no need for. */
+.sdd-download-line {
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.bp-file-line code {
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.15rem 0.4rem;
+}
+
+/*
+  A filename that opens the file. Same plate as the `code` chips beside it, because it is the
+  same thing — a path — but it is a button, so it says so on hover and takes focus.
+*/
+.file-chip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.15rem 0.4rem;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.file-chip:hover,
+.file-chip:focus-visible {
+  color: var(--ink);
+  border-color: var(--accent-dim);
+  text-decoration: underline;
+}
+
+/* Inline in a sentence: no plate, so the prose still reads as prose. */
+.file-chip.inline {
+  background: none;
+  border: none;
+  padding: 0 0.1rem;
+  text-decoration: underline;
+}
+
+/* The two halves of the Diagrams tab — blueprint, then SDD §3.2's architecture. */
+.dg-group-title {
+  margin: 1.4rem 0 0.35rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.dg-group-title:first-child {
+  margin-top: 0.2rem;
+}
+
+.dg-group-title code {
+  font-size: 0.8rem;
+}
+
+.bp-note { margin-top: 0.6rem; color: var(--warn); }
+
+/* Full text of everything the diagram had to abbreviate to stay readable. */
+.bp-steps {
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 0.7rem 0.9rem;
+}
+
+.bp-steps summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.bp-actor-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+
+.bp-actor {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: #cfe0d7;
+}
+
+.bp-actor em {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 0.68rem;
+}
+
+.bp-actor[data-kind='system'] { border-color: rgba(61, 207, 154, 0.4); }
+.bp-actor[data-kind='external'] { border-color: rgba(232, 184, 109, 0.4); }
+
+.bp-step-list {
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.bp-step-list li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: 0.85rem;
+}
+
+.bp-step-list strong { display: block; }
+.bp-step-list p { margin: 0.15rem 0 0; }
+
+.bp-step-kind {
+  flex: 0 0 5.2rem;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.16rem 0;
+  text-align: center;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+/* Same colour vocabulary as the PNG, so a box and its row are recognisably the same step. */
+.bp-step-kind[data-kind='start'] { border-color: rgba(31, 157, 85, 0.5); color: #7ddcae; }
+.bp-step-kind[data-kind='decision'] { border-color: rgba(201, 120, 28, 0.5); color: #e8b86d; }
+.bp-step-kind[data-kind='subprocess'] { border-color: rgba(114, 69, 224, 0.5); color: #b9a3f5; }
+.bp-step-kind[data-kind='end'] { border-color: rgba(194, 59, 59, 0.5); color: #f0a1a1; }
+
+.bp-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.bp-detail-block {
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.bp-detail-block.warn-block { border-color: rgba(232, 184, 109, 0.35); }
+
+.bp-detail-block p, .bp-detail-block ul {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: #cfe0d7;
+}
+
+.bp-detail-block ul { padding-left: 1.1rem; }
+.bp-detail-block li { margin-bottom: 0.25rem; }
+
+.bp-detail-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.bp-followup {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+/* ── Which diagrams a follow-up applies to ───────────────────────────────── */
+
+.scope-pick {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.scope-pick-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Two cards rather than a native radio pair: each option carries a consequence line, and the
+ * choice is the difference between changing the process and changing one picture. */
+.scope-opts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.scope-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 110ms ease-out, background 110ms ease-out, transform 90ms ease-out;
+}
+
+.scope-opt:hover:not(:disabled) {
+  border-color: rgba(61, 207, 154, 0.45);
+  background: rgba(61, 207, 154, 0.07);
+}
+
+.scope-opt:active:not(:disabled) {
+  transform: scale(0.99);
+  transition-duration: 40ms;
+}
+
+.scope-opt.on {
+  border-color: rgba(61, 207, 154, 0.7);
+  background: rgba(61, 207, 154, 0.13);
+}
+
+.scope-opt:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.scope-opt-dot {
+  margin-top: 0.2rem;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: grid;
+  place-items: center;
+}
+
+/* The filled centre is drawn, not swapped in, so the ring does not move when it is selected. */
+.scope-opt.on .scope-opt-dot {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 3px var(--accent);
+}
+
+.scope-opt-body {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.scope-opt-body strong { font-size: 0.88rem; }
+
+.scope-note {
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Scope as a badge — on the spinner while a follow-up runs, and on each history entry. */
+.scope-tag {
+  align-self: start;
+  justify-self: start;
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  border: 1px solid rgba(61, 207, 154, 0.45);
+  background: rgba(61, 207, 154, 0.12);
+  color: var(--accent);
+}
+
+/* One view only. Violet, like everything else in the UI that means "the picture, not the
+ * process" — the blueprint chips in the admin panel use the same family. */
+.scope-tag[data-scope='view'],
+.scope-tag[data-scope='sipoc'],
+.scope-tag[data-scope='flow'],
+.scope-tag[data-scope='swimlane'] {
+  border-color: rgba(180, 160, 255, 0.5);
+  background: rgba(180, 160, 255, 0.12);
+  color: #c9b8ff;
+}
+
+.scope-tag[data-scope='first'] {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+}
+
+.scope-tag.rev { margin-top: 0.1rem; }
+
+.scope-running {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.scope-running .muted { margin: 0; }
+
+@media (max-width: 700px) {
+  .scope-opts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bp-revisions {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.bp-rev-hint { margin: -0.2rem 0 0; }
+
+/* A button, not a row: clicking it loads that version's diagrams into the viewer. */
+.bp-revision {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.bp-revision:hover:not(:disabled) {
+  border-color: rgba(61, 207, 154, 0.5);
+  background: rgba(61, 207, 154, 0.08);
+}
+
+.bp-revision.active {
+  border-color: rgba(61, 207, 154, 0.7);
+  background: rgba(61, 207, 154, 0.14);
+}
+
+.bp-revision.current { border-color: rgba(255, 255, 255, 0.22); }
+
+.bp-revision:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.bp-rev-body {
+  display: grid;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.bp-rev-instruction { margin: 0; font-size: 0.85rem; }
+.bp-revision .muted { margin: 0; }
+
+.bp-rev-view {
+  color: var(--accent);
+  white-space: nowrap;
+  align-self: center;
+}
+
+.bp-revision.current .bp-rev-view,
+.bp-revision:disabled .bp-rev-view { color: var(--muted); }
+
+/* Which version is on screen. Inside the viewer, so it follows it into full screen. */
+.bp-history-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(232, 184, 109, 0.45);
+  border-radius: 10px;
+  background: rgba(232, 184, 109, 0.1);
+}
+
+.bp-history-bar .muted { flex: 1; min-width: 12rem; }
+
+.bp-pill.hist {
+  border-color: rgba(232, 184, 109, 0.6);
+  color: var(--warn);
+}
+
+.bp-step-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.bp-step-filter input {
+  flex: 1;
+  min-width: 12rem;
+  margin: 0;
+}
+
+.bp-step-filter .muted {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bp-actions { border-top: 1px solid var(--line); padding-top: 1.25rem; }
+
+.bp-gate { text-align: left; }
+
+@media (max-width: 860px) {
+  .stepper { grid-template-columns: repeat(3, 1fr); }
+  .choice-grid, .choice-grid.three { grid-template-columns: 1fr; }
+  .top { flex-direction: column; }
+  .file-browser { grid-template-columns: 1fr; }
+  .file-list { max-height: 160px; border-right: none; border-bottom: 1px solid var(--line); }
+  .review-head { flex-direction: column; }
+  .review-actions { flex-direction: row; width: 100%; }
+  .bp-head { flex-direction: column; }
+  .bp-empty-grid { grid-template-columns: 1fr; }
+}
+

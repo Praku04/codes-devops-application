@@ -1,0 +1,1590 @@
+<div class="shell">
+  <header class="top">
+    <div class="brand-block">
+      <p class="eyebrow">HexaAgent</p>
+      <h1>AgentCraft</h1>
+    </div>
+    <div class="top-right">
+      <div class="status-pill" [class.ok]="apiOk" [class.bad]="!apiOk">
+        {{ apiOk ? 'API connected' : 'API offline' }}
+      </div>
+      <!-- A `nav`, not a `div`: these chips are the only way out of the wizard, and the stepper
+           below is already a labelled landmark. Two of them let a screen reader jump straight to
+           "the one that leaves this page" instead of walking the whole header. -->
+      <nav class="top-nav" aria-label="Account and navigation">
+        <button type="button" class="nav-chip" (click)="goSessions()">← Sessions</button>
+        <button type="button" class="nav-chip accent" (click)="startNewProject()">New project</button>
+        @if (auth.isAdmin) {
+          <button type="button" class="nav-chip" (click)="goAdmin()">Admin</button>
+        }
+        <button type="button" class="nav-chip" (click)="logout()">Log out</button>
+      </nav>
+    </div>
+    <!-- The product line, and it has to read the same everywhere: the README, the OpenAPI
+         description in `app/main.py` and the interview prompt all name "agents, skills, and rules".
+         It sits here, as a full-width row of its own rather than inside `.brand-block`, because in
+         there it shared the header's width with the status pill and four nav chips and had to wrap
+         — and a sentence this long broken across two lines under a 4rem wordmark reads as a
+         paragraph, not a tagline. Out here it gets the whole shell, so it stays one line.
+
+         What it claims is what the wizard does, in order: a brief comes in, the process model
+         (SIPOC, flow, swimlane) is approved, and only then does generation write what the export
+         ships — the agents, skills and rules folders, plus the `.mcp.json` that registers the
+         servers. All four are in `app/services/export/renderers.py`; none of the four is a claim
+         this line makes without the export backing it. -->
+    <p class="tagline">
+      From a problem statement to an approved process blueprint, then to the agents, skills, rules
+      and MCP servers that follow it — an IDE-ready workspace.
+    </p>
+  </header>
+
+  <nav class="stepper" aria-label="Wizard steps">
+    @for (s of steps; track s.id; let i = $index) {
+      <div
+        class="step"
+        [class.active]="step === s.id || (step === 'interview' && s.id === 'docs')"
+        [class.done]="isStepDone(s.id)"
+      >
+        <span class="num">{{ i + 1 }}</span>
+        <span>{{ s.label }}</span>
+      </div>
+    }
+  </nav>
+
+  @if (error) {
+    <div class="banner danger-bg">{{ error }}</div>
+  }
+
+  @if (project) {
+    <div class="meta card session-bar">
+      <div class="session-info">
+        <span class="session-name">{{ project.name }}</span>
+        <span class="state-pill">{{ project.state }}</span>
+        @if (project.platform) {
+          <span class="plat-pill">{{ platformLabel(project.platform) }}</span>
+        }
+        @if (project.blockers.length && project.state !== 'EXPORTED') {
+          <span class="warn">{{ project.blockers[0] }}</span>
+        }
+      </div>
+      <div class="session-actions">
+        <button type="button" class="meta-btn" (click)="goSessions()">← Back to sessions</button>
+        <button type="button" class="meta-btn primary" (click)="startNewProject()">New project</button>
+        @if (step !== 'export' && project.state === 'EXPORTED') {
+          <button type="button" class="meta-btn" (click)="goExport()">Go to export</button>
+        }
+      </div>
+    </div>
+  }
+
+  <main class="stage">
+    @if (step === 'start') {
+      <section class="hero-panel card animate-in">
+        @if (!project) {
+          <h2>Start a workspace</h2>
+          <p class="muted">Name your project, then choose how you will provide context.</p>
+          <label>Project name</label>
+          <input type="text" [(ngModel)]="projectName" placeholder="Payments platform agents" />
+          <div class="actions">
+            <button (click)="begin()" [disabled]="busy">Create project</button>
+          </div>
+        } @else {
+          <h2>How will you describe the work?</h2>
+          <div class="choice-grid">
+            <button type="button" class="choice" (click)="choosePath('docs')" [disabled]="busy">
+              <strong>I have documents</strong>
+              <span class="muted">PRD, BRD, tech spec, or problem statement files</span>
+            </button>
+            <button type="button" class="choice" (click)="choosePath('interview')" [disabled]="busy">
+              <strong>I don’t have documents</strong>
+              <span class="muted">Answer guided questions about goals, stack, and domains</span>
+            </button>
+          </div>
+        }
+      </section>
+    }
+
+    @if (step === 'docs') {
+      <section class="card animate-in docs-card">
+        @if (docsPhase) {
+          <div class="expand-overlay" aria-live="polite" aria-busy="true">
+            <div class="expand-spinner">
+              <div class="expand-ring"></div>
+              <div class="expand-core"></div>
+            </div>
+            <p class="expand-title">Reading documents &amp; checking context match</p>
+            <p class="muted tiny">
+              {{ docsUploadHint }} · {{ docsElapsed }}s
+            </p>
+            <div class="expand-bars">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        }
+
+        <h2>Documents &amp; problem statement</h2>
+        <p class="muted">
+          Both a problem statement and supporting documents are required (PNG, JPEG, PDF, DOCX, MD, TXT, CSV, or
+          Excel). Every sheet of a workbook is read.
+          Continue checks <strong>semantic context similarity</strong> — same product, goals, and domain — not keywords alone.
+        </p>
+
+        <label>
+          Problem statement <span class="req" title="Required">*</span>
+        </label>
+        <textarea
+          class="statement-box"
+          [class.statement-tall]="statement.length > 280"
+          [rows]="statement.length > 280 ? 16 : 5"
+          [(ngModel)]="statement"
+          [placeholder]="examplePlaceholder"
+          [disabled]="!!docsPhase"
+        ></textarea>
+
+        <label>
+          Documents <span class="req" title="Required">*</span>
+        </label>
+        <p class="muted tiny formats-hint">
+          Supported: <code>png</code>, <code>jpeg</code>, <code>pdf</code>, <code>docx</code>,
+          <code>md</code>, <code>txt</code>, <code>csv</code>, <code>tsv</code>, <code>xlsx</code>,
+          <code>xls</code> · multiple files allowed
+        </p>
+        <div
+          class="dropzone"
+          [class.over]="dragOver"
+          [class.has-files]="files.length > 0"
+          [class.attaching]="isAttaching"
+          (dragover)="$event.preventDefault(); dragOver = true"
+          (dragleave)="dragOver = false"
+          (drop)="onDrop($event)"
+        >
+          @if (isAttaching) {
+            <!-- Opening files from a slow disk or cloud folder is not instant. -->
+            <div class="attach-status" aria-live="polite" aria-busy="true">
+              <span class="attach-spinner" aria-hidden="true"></span>
+              <span>
+                Adding {{ attaching }} file{{ attaching === 1 ? '' : 's' }}…
+                <span class="muted tiny">reading from your device</span>
+              </span>
+            </div>
+          } @else {
+            <p><strong>Drag &amp; drop files here</strong></p>
+            <p class="muted tiny">or browse to add several documents at once</p>
+          }
+          <label class="file-btn" [class.disabled]="isAttaching">
+            {{ isAttaching ? 'Adding files…' : 'Browse files' }}
+            <input
+              type="file"
+              multiple
+              hidden
+              [disabled]="isAttaching || !!docsPhase"
+              (change)="onFileInput($event)"
+              accept=".pdf,.docx,.md,.txt,.markdown,.csv,.tsv,.xlsx,.xlsm,.xls,.png,.jpg,.jpeg,image/png,image/jpeg"
+            />
+          </label>
+        </div>
+
+        @if (fileRejectMessage) {
+          <p class="file-reject">{{ fileRejectMessage }}</p>
+        }
+
+        @if (files.length) {
+          <!-- Tracked by File object: with $index, removing one chip re-created all the
+               chips after it, which is what made × feel sluggish. -->
+          <ul class="chips upload-chips">
+            @for (f of files; track f) {
+              <li>
+                <span class="ext-pill">{{ fileExtLabel(f) }}</span>
+                <span class="file-name">{{ f.name }}</span>
+                @if (formatBytes(f.size)) {
+                  <span class="muted tiny">{{ formatBytes(f.size) }}</span>
+                }
+                <button
+                  type="button"
+                  class="chip-x"
+                  (click)="removeFile(f)"
+                  [disabled]="!!docsPhase || isAttaching"
+                  [attr.aria-label]="'Remove ' + f.name"
+                  [attr.title]="'Remove ' + f.name"
+                >×</button>
+              </li>
+            }
+          </ul>
+          <p class="muted tiny attached-line">
+            <span class="ok-tick" aria-hidden="true">✓</span>
+            {{ files.length }} file{{ files.length === 1 ? '' : 's' }} attached and ready to upload
+            @if (files.length > 1) {
+              <button
+                type="button"
+                class="link-btn"
+                (click)="clearFiles()"
+                [disabled]="!!docsPhase || isAttaching"
+              >Remove all</button>
+            }
+          </p>
+        }
+
+        @if (savedDocuments.length) {
+          <div class="saved-docs">
+            <p class="saved-docs-head">
+              Already saved with this project
+              <span class="q-badge">{{ savedDocuments.length }}</span>
+            </p>
+            <ul class="chips upload-chips">
+              @for (d of savedDocuments; track d.filename) {
+                <li>
+                  <span class="ext-pill">{{ extLabelFor(d.filename) }}</span>
+                  <span class="file-name">{{ d.filename }}</span>
+                  @if (formatBytes(d.size_bytes)) {
+                    <span class="muted tiny">{{ formatBytes(d.size_bytes) }}</span>
+                  }
+                </li>
+              }
+            </ul>
+            @if (!files.length) {
+              <p class="muted tiny reupload-note">
+                Your statement and this document list were restored. Browsers can't re-attach
+                files, so re-add
+                {{ savedDocuments.length === 1 ? 'the document' : 'the documents' }} above to
+                continue.
+              </p>
+            }
+          </div>
+        }
+
+        <div class="actions">
+          <button type="button" class="ghost" (click)="rollbackWizard()" [disabled]="busy || !!docsPhase || isAttaching">
+            ← Back
+          </button>
+          <button (click)="submitDocs()" [disabled]="busy || !!docsPhase || isAttaching || !docsReady">
+            {{ isAttaching ? 'Adding files…' : 'Continue' }}
+          </button>
+          @if (!docsReady && !isAttaching) {
+            <span class="muted">{{ docsMissingHint }}</span>
+          }
+        </div>
+      </section>
+    }
+
+    @if (step === 'interview') {
+      <section class="card animate-in docs-card" [class.brief-ready]="briefExpanded">
+        @if (expandingBrief) {
+          <div class="expand-overlay" aria-live="polite" aria-busy="true">
+            <div class="expand-spinner">
+              <div class="expand-ring"></div>
+              <div class="expand-core"></div>
+            </div>
+            <p class="expand-title">Building your detailed brief</p>
+            <p class="muted tiny">
+              {{ expandDoneCount }}/{{ expandParallelStatus.length || 8 }} sections · writing Product, Goals, Stack &amp; more at the same time
+            </p>
+            @if (expandParallelStatus.length) {
+              <div class="expand-chips" aria-label="Parallel section progress">
+                @for (s of expandParallelStatus; track s.key) {
+                  <span class="expand-chip" [class.done]="s.state === 'done'" [class.fail]="s.state === 'fail'" [class.pending]="s.state === 'pending'">
+                    {{ s.title }}
+                  </span>
+                }
+              </div>
+            }
+            <div class="expand-bars">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        }
+
+        @if (tailoringQuestions) {
+          <div class="expand-overlay" aria-live="polite" aria-busy="true">
+            <div class="expand-spinner">
+              <div class="expand-ring"></div>
+              <div class="expand-core"></div>
+            </div>
+            <p class="expand-title">Tailoring questions to your project</p>
+            <p class="muted tiny">A few specifics only — you can skip every one of them</p>
+            <div class="expand-bars">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        }
+
+        <h2>Project interview</h2>
+        <div class="progress">
+          <div class="bar" [style.width.%]="interviewProgress"></div>
+        </div>
+        <p class="muted">{{ interviewHint }}</p>
+        @if (saveMessage && step === 'interview') {
+          <p class="save-msg">{{ saveMessage }}</p>
+        }
+
+        @if (activeInterviewQuestion) {
+          <div class="q-card">
+            <div class="q-head">
+              <p class="q-id">{{ activeInterviewQuestion.id }}</p>
+              @if (activeInterviewQuestion.id === 'goal') {
+                <span class="q-badge required">Required</span>
+              } @else {
+                <span class="q-badge">Optional · {{ followupPosition }} of {{ followupQuestions.length }}</span>
+              }
+            </div>
+            <h3>{{ activeInterviewQuestion.prompt }}</h3>
+
+            @if (activeInterviewQuestion.id === 'goal') {
+              <label class="q-title-label" for="interview-title">Project title</label>
+              <input
+                id="interview-title"
+                type="text"
+                class="q-title-input"
+                [(ngModel)]="interviewTitle"
+                placeholder="Smart Tutor AI"
+                [disabled]="expandingBrief"
+              />
+              <p class="muted tiny">Optional — names the session. Left blank, we derive it from your statement.</p>
+            }
+
+            @if (!briefExpanded || editingExpandedBrief || !canExpandInterviewAnswer) {
+              <textarea
+                class="interview-answer-box"
+                [class.interview-answer-tall]="editingExpandedBrief || currentAnswer.length > 180"
+                [rows]="editingExpandedBrief ? 24 : currentAnswer.length > 180 ? 14 : 6"
+                [(ngModel)]="currentAnswer"
+                [placeholder]="editingExpandedBrief ? 'Edit the full expanded brief…' : 'Type your answer…'"
+                [disabled]="expandingBrief"
+              ></textarea>
+            }
+
+            @if (briefExpanded && !editingExpandedBrief && canExpandInterviewAnswer) {
+              <div class="brief-panel animate-in brief-panel-interactive">
+                <div class="brief-panel-head">
+                  <div>
+                    <p class="summary-label">Expanded brief</p>
+                    <p class="muted tiny">Click a section to open it — this becomes your interview answer</p>
+                  </div>
+                  <div class="brief-panel-actions">
+                    <button type="button" class="ghost tiny" (click)="expandAllBriefSections($event)">Expand all</button>
+                    <button type="button" class="ghost tiny" (click)="collapseAllBriefSections($event)">Collapse all</button>
+                    <button type="button" class="ghost tiny" (click)="startEditExpandedBrief($event)">Edit text</button>
+                    <button type="button" class="ghost tiny" (click)="collapseExpandedBrief($event)">Show compact</button>
+                  </div>
+                </div>
+                <div class="brief-sections">
+                  @for (sec of briefSections; track $index; let i = $index) {
+                    <div
+                      class="brief-section"
+                      [class.open]="isBriefSectionOpen(i)"
+                      [class.editing]="isEditingBriefSection(i)"
+                      (click)="onBriefCardClick(i)"
+                    >
+                      <div class="brief-section-bar" (click)="$event.stopPropagation()">
+                        <button type="button" class="brief-section-toggle" (click)="toggleBriefSection(i, $event)">
+                          <span class="brief-section-title">
+                            <span class="brief-chevron" aria-hidden="true">{{ isBriefSectionOpen(i) ? '▾' : '▸' }}</span>
+                            <strong>{{ sec.title }}</strong>
+                            <span class="brief-sec-index">{{ i + 1 }}/{{ briefSections.length }}</span>
+                          </span>
+                        </button>
+                        <div class="brief-section-actions">
+                          @if (isEditingBriefSection(i)) {
+                            <button type="button" class="secondary tiny" (click)="saveBriefSection(i, $event)">Save</button>
+                            <button type="button" class="ghost tiny" (click)="cancelEditBriefSection($event)">Cancel</button>
+                          } @else {
+                            <button type="button" class="ghost tiny" (click)="startEditBriefSection(i, $event)">Edit</button>
+                            <button type="button" class="ghost tiny" (click)="toggleBriefSection(i, $event)">
+                              {{ isBriefSectionOpen(i) ? 'Hide' : 'Show' }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                      @if (!isBriefSectionOpen(i) && !isEditingBriefSection(i)) {
+                        <p class="brief-section-preview">{{ briefPreview(sec.body) }}</p>
+                      }
+                      @if (isBriefSectionOpen(i) || isEditingBriefSection(i)) {
+                        <div class="brief-section-body" (click)="$event.stopPropagation()">
+                          @if (isEditingBriefSection(i)) {
+                            <textarea
+                              class="brief-section-edit"
+                              rows="12"
+                              [(ngModel)]="editingBriefSectionBody"
+                              placeholder="Edit this section…"
+                            ></textarea>
+                            <p class="muted tiny">Save to refresh the live markdown preview for this card.</p>
+                          } @else if (sec.html) {
+                            <div class="md-preview" [innerHTML]="sec.html"></div>
+                          } @else {
+                            <p class="muted tiny">Loading preview…</p>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                  @if (!briefSections.length) {
+                    <pre class="brief-fallback">{{ currentAnswer }}</pre>
+                  }
+                </div>
+              </div>
+            }
+
+            <div class="example-row">
+              @if (editingExpandedBrief) {
+                <button type="button" (click)="applyInterviewExpandedEdit()" [disabled]="expandingBrief">
+                  Apply edits
+                </button>
+              } @else if (canExpandInterviewAnswer) {
+                <button
+                  type="button"
+                  class="secondary"
+                  (click)="expandInterviewAnswer()"
+                  [disabled]="busy || expandingBrief || !currentAnswer.trim()"
+                >
+                  {{ briefExpanded ? 'Re-expand brief' : 'Expand to detailed brief' }}
+                </button>
+                <span class="muted tiny">Optional — fills Product, Goals, Stack &amp; more, and skips the remaining questions</span>
+              }
+            </div>
+
+            <div class="actions">
+              <button type="button" class="ghost" (click)="interviewBack()" [disabled]="busy || expandingBrief">
+                ← Back
+              </button>
+              @if (canInterviewNext) {
+                <button type="button" class="ghost" (click)="interviewNext()" [disabled]="busy || expandingBrief">
+                  Next →
+                </button>
+              }
+              @if (canSkipCurrentQuestion) {
+                <button type="button" class="ghost" (click)="skipOptionalQuestion()" [disabled]="busy || expandingBrief">
+                  Skip
+                </button>
+                @if (remainingFollowups > 1) {
+                  <button type="button" class="ghost" (click)="skipRemainingQuestions()" [disabled]="busy || expandingBrief">
+                    Skip all {{ remainingFollowups }} &amp; continue
+                  </button>
+                }
+              }
+              <button
+                type="button"
+                class="btn-primary"
+                [class.is-busy]="busy"
+                (click)="submitAnswer()"
+                [disabled]="busy || expandingBrief || (activeInterviewQuestion.id === 'goal' && !currentAnswer.trim())"
+              >
+                @if (busy) {
+                  <span class="btn-spinner" aria-hidden="true"></span>
+                }
+                {{ interviewSubmitLabel }}
+              </button>
+              @if (interviewAllSettled) {
+                <button
+                  type="button"
+                  class="ghost"
+                  (click)="continueFromInterview()"
+                  [disabled]="busy || expandingBrief"
+                >
+                  Continue to blueprint →
+                </button>
+              }
+            </div>
+            @if (pendingDraftCount) {
+              <p class="muted tiny draft-note">
+                {{ pendingDraftCount }} unsaved edit{{ pendingDraftCount === 1 ? '' : 's' }} kept —
+                saved together with this question.
+              </p>
+            }
+          </div>
+        } @else {
+          <p>Interview complete. Continuing…</p>
+        }
+      </section>
+    }
+
+    @if (step === 'blueprint') {
+      <section class="card animate-in bp-card">
+        <div class="bp-head">
+          <div class="bp-head-text">
+            <h2>Process blueprint</h2>
+            <p class="muted">
+              SIPOC, process flow and swimlane, read out of your problem statement and any
+              uploaded documents. Approve them and the agents, skills, rules and MCP servers are
+              generated to follow this exact process.
+            </p>
+          </div>
+          @if (blueprint) {
+            <div class="bp-badges">
+              <span class="bp-pill">v{{ blueprint.version }}</span>
+              <span class="bp-pill" [class.ok]="blueprint.frozen">
+                {{ blueprint.frozen ? 'Approved' : 'Draft' }}
+              </span>
+              @if (!blueprint.llm) {
+                <span class="bp-pill warn">Placeholder</span>
+              }
+            </div>
+          }
+        </div>
+
+        @if (blueprintError) {
+          <!-- Amber, not red, when the follow-up simply changed nothing: the blueprint is intact
+               and the instruction is still in the box, waiting to be made more specific. -->
+          <div class="banner" [class.warn-bg]="blueprintNoChange" [class.danger-bg]="!blueprintNoChange">
+            {{ blueprintError }}
+          </div>
+        }
+        @if (blueprintMessage && !blueprintDrawing) {
+          <div class="banner ok-bg">{{ blueprintMessage }}</div>
+        }
+
+        @if (blueprintDrawing) {
+          <div class="spinner-wrap" aria-live="polite" aria-busy="true">
+            <div class="orbit">
+              <span class="planet"></span>
+              <span class="ring ring-a"></span>
+              <span class="ring ring-b"></span>
+              <span class="core"></span>
+            </div>
+            <p class="gen-title">{{ blueprintSpinnerTitle }}</p>
+            <!--
+              What is moving, while it moves. The scope was chosen a moment ago and the wait is
+              long enough to doubt it — so it is restated here rather than left to memory.
+            -->
+            @if (runningScope) {
+              <p class="scope-running">
+                <span class="scope-tag" [attr.data-scope]="runningScope">{{ runningScopeTag }}</span>
+                <span class="muted tiny">
+                  @if (runningScope === 'all') {
+                    the process is being revised first
+                  } @else {
+                    the process model is not being changed
+                  }
+                </span>
+              </p>
+            }
+            <p class="gen-progress">{{ blueprintMessage || 'Working…' }}</p>
+            <p class="muted tiny gen-wait-hint">{{ blueprintSpinnerHint }}</p>
+            <div class="pulse-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          </div>
+        } @else if (blueprintLoading) {
+          <p class="muted">Loading blueprint…</p>
+        } @else if (!blueprint) {
+          <div class="bp-empty">
+            <div class="bp-empty-grid">
+              @for (t of diagramViews; track t.id) {
+                <div class="bp-empty-tile">
+                  <strong>{{ t.label }}</strong>
+                  <span class="muted tiny">{{ t.hint }}</span>
+                  <span class="tiny bp-tile-use">{{ t.use }}</span>
+                </div>
+              }
+            </div>
+            <p class="muted tiny">
+              Nothing is generated yet. Draw the blueprint to review the process first, or skip
+              straight to the IDE — skipping generates from the brief exactly as before.
+            </p>
+            <div class="actions">
+              <button type="button" class="ghost" (click)="blueprintBack()" [disabled]="busy">← Back</button>
+              <button (click)="generateBlueprint()" [disabled]="busy">Draw the blueprint</button>
+              <button type="button" class="ghost" (click)="skipBlueprint()" [disabled]="busy">
+                {{ blueprintSkipLabel }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <ng-container
+            *ngTemplateOutlet="diagramViewerTpl; context: { tabs: true }"
+          ></ng-container>
+
+          @if (historyError) {
+            <p class="muted tiny bp-note">{{ historyError }}</p>
+          }
+
+          @if (!blueprint.llm) {
+            <p class="muted tiny bp-note">
+              These were drawn by the deterministic fallback, not the model — either demo mode or
+              Bedrock was unavailable. Regenerate once credentials are working for a blueprint
+              that actually reads your documents.
+            </p>
+          }
+
+          <div class="bp-detail">
+            @if (blueprint.model.scope) {
+              <div class="bp-detail-block">
+                <span class="bp-detail-label">Scope</span>
+                <p>{{ blueprint.model.scope }}</p>
+              </div>
+            }
+            @if (blueprint.model.assumptions.length) {
+              <div class="bp-detail-block">
+                <span class="bp-detail-label">Assumptions made</span>
+                <ul>
+                  @for (a of blueprint.model.assumptions; track $index) {
+                    <li>{{ a }}</li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (blueprint.warnings.length) {
+              <div class="bp-detail-block warn-block">
+                <span class="bp-detail-label">Repairs and gaps</span>
+                <ul>
+                  @for (w of blueprint.warnings; track $index) {
+                    <li>{{ w }}</li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (blueprint.sipoc.metrics.length) {
+              <div class="bp-detail-block">
+                <span class="bp-detail-label">Measures</span>
+                <ul>
+                  @for (m of blueprint.sipoc.metrics; track $index) {
+                    <li>{{ m }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+
+          <!--
+            The renderer ellipsises a long step name to keep a box readable, so the model's own
+            wording lives here in full. This is also the list to check a follow-up against — it
+            is the text that gets fed to generation, not the picture.
+          -->
+          <details class="bp-steps">
+            <summary>
+              All {{ blueprint.model.steps.length }} steps and
+              {{ blueprint.model.actors.length }} actors, in full
+            </summary>
+            @if (blueprint.model.actors.length) {
+              <div class="bp-actor-row">
+                @for (a of blueprint.model.actors; track a.name) {
+                  <span class="bp-actor" [attr.data-kind]="a.kind">
+                    {{ a.name }} <em>{{ a.kind }}</em>
+                  </span>
+                }
+              </div>
+            }
+            <div class="bp-step-filter">
+              <input
+                type="search"
+                [(ngModel)]="stepFilter"
+                placeholder="Filter steps — name, id, actor, system…"
+                aria-label="Filter the step list"
+              />
+              <span class="muted tiny">
+                {{ filteredSteps.length }} of {{ blueprint.model.steps.length }}
+                @if (stepFilter.trim()) {
+                  <button type="button" class="ghost tiny" (click)="stepFilter = ''">Clear</button>
+                }
+              </span>
+            </div>
+            @if (!filteredSteps.length) {
+              <p class="muted tiny">Nothing matches “{{ stepFilter }}”.</p>
+            }
+            <ol class="bp-step-list">
+              @for (s of filteredSteps; track s.id) {
+                <li>
+                  <span class="bp-step-kind" [attr.data-kind]="s.kind">{{ s.kind }}</span>
+                  <div>
+                    <strong>{{ s.name }}</strong>
+                    <span class="muted tiny">
+                      {{ s.id }}@if (s.actor) { · {{ s.actor }} }@if (s.systems.length) {
+                        · {{ s.systems.join(', ') }}
+                      }
+                    </span>
+                    @if (s.description) {
+                      <p class="muted tiny">{{ s.description }}</p>
+                    }
+                  </div>
+                </li>
+              }
+            </ol>
+          </details>
+
+          <div class="bp-followup">
+            <label>Change something</label>
+            <p class="muted tiny">
+              Describe the correction in plain language — "the reviewer also checks credit
+              history", "drop the manual re-key step", "compliance signs off before release".
+            </p>
+            <textarea
+              rows="3"
+              [(ngModel)]="blueprintFollowup"
+              [disabled]="busy || blueprint.frozen"
+              placeholder="What should the process do differently?"
+            ></textarea>
+
+            <!--
+              Which diagrams this applies to. Asked rather than assumed: the two answers are
+              different requests, and doing the wrong one either leaves three views disagreeing
+              or redraws two pictures the user was happy with. "Only this view" follows the tab
+              strip above, so its label always names the diagram on screen.
+            -->
+            <div class="scope-pick" role="radiogroup" aria-label="Apply this change to">
+              <span class="scope-pick-label">Apply this change to</span>
+              <div class="scope-opts">
+                <button
+                  type="button"
+                  class="scope-opt"
+                  role="radio"
+                  [class.on]="followupScopeMode === 'all'"
+                  [attr.aria-checked]="followupScopeMode === 'all'"
+                  [disabled]="busy || blueprint.frozen"
+                  (click)="setFollowupScope('all')"
+                >
+                  <span class="scope-opt-dot" aria-hidden="true"></span>
+                  <span class="scope-opt-body">
+                    <strong>All three diagrams</strong>
+                    <span class="muted tiny">The process changes · SIPOC, flow and swimlane</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="scope-opt"
+                  role="radio"
+                  [class.on]="followupScopeMode === 'view'"
+                  [attr.aria-checked]="followupScopeMode === 'view'"
+                  [disabled]="busy || blueprint.frozen"
+                  (click)="setFollowupScope('view')"
+                >
+                  <span class="scope-opt-dot" aria-hidden="true"></span>
+                  <span class="scope-opt-body">
+                    <strong>Only {{ activeViewLabel }}</strong>
+                    <span class="muted tiny">Just how this one is drawn · the process stays put</span>
+                  </span>
+                </button>
+              </div>
+              <p class="muted tiny scope-note">{{ followupScopeNote }}</p>
+            </div>
+
+            <div class="actions">
+              <button
+                (click)="submitBlueprintFollowup()"
+                [disabled]="busy || blueprint.frozen || !blueprintFollowup.trim()"
+              >
+                {{ followupApplyLabel }}
+              </button>
+              <button type="button" class="ghost" (click)="generateBlueprint()" [disabled]="busy || blueprint.frozen">
+                Redraw from scratch
+              </button>
+            </div>
+            @if (blueprint.frozen) {
+              <p class="muted tiny">
+                Approved and locked. Reopen it to make changes — the generated agents follow
+                whatever is approved here.
+              </p>
+            }
+          </div>
+
+          <!--
+            Each entry is a button: clicking one redraws that version's three diagrams and puts
+            them in the viewer above. Nothing is overwritten — "Back to v{{ blueprint.version }}"
+            in the banner returns to the current set, which was never unloaded.
+          -->
+          @if (blueprint.revisions.length) {
+            <div class="bp-revisions">
+              <span class="bp-detail-label">Change history</span>
+              <p class="muted tiny bp-rev-hint">
+                Click a version to see the diagrams as they were at that point. Each entry says
+                whether it changed the process (all three views) or re-drew one of them.
+              </p>
+              @for (r of blueprint.revisions; track r.version) {
+                <button
+                  type="button"
+                  class="bp-revision"
+                  [class.active]="isViewingRevision(r.version)"
+                  [class.current]="r.version === blueprint.version && historyVersion === null"
+                  [disabled]="historyLoading || r.viewable === false"
+                  (click)="viewRevision(r.version)"
+                  [attr.aria-pressed]="isViewingRevision(r.version)"
+                >
+                  <span class="bp-pill">v{{ r.version }}</span>
+                  <span class="bp-rev-body">
+                    <span class="bp-rev-instruction">{{ r.instruction }}</span>
+                    <span class="muted tiny">{{ r.summary }}</span>
+                    <span class="scope-tag rev" [attr.data-scope]="revisionScopeKind(r)">
+                      {{ revisionScopeLabel(r) }}
+                    </span>
+                  </span>
+                  <span class="bp-rev-view tiny">
+                    @if (r.viewable === false) {
+                      Diagrams not kept
+                    } @else if (isViewingRevision(r.version)) {
+                      Showing ✓
+                    } @else if (r.version === blueprint.version) {
+                      Current
+                    } @else {
+                      View images →
+                    }
+                  </span>
+                </button>
+              }
+            </div>
+          }
+
+          <div class="actions bp-actions">
+            <button type="button" class="ghost" (click)="blueprintBack()" [disabled]="busy">← Back</button>
+            @if (!blueprint.frozen) {
+              <button (click)="freezeBlueprint()" [disabled]="busy">Approve blueprint</button>
+            } @else {
+              <button type="button" class="ghost" (click)="unfreezeBlueprint()" [disabled]="busy">
+                Reopen for changes
+              </button>
+              <button (click)="continueFromBlueprint()" [disabled]="busy">Continue to IDE →</button>
+            }
+            <button type="button" class="ghost danger" (click)="discardBlueprint()" [disabled]="busy">
+              Discard
+            </button>
+          </div>
+        }
+      </section>
+    }
+
+    @if (step === 'platform') {
+      <section class="card animate-in">
+        <h2>Choose your IDE</h2>
+        <p class="muted">Generation is locked until you pick a target format.</p>
+        <div class="choice-grid three">
+          @for (p of platforms; track p.id) {
+            <button
+              type="button"
+              class="choice"
+              [class.selected]="selectedPlatform === p.id"
+              (click)="selectPlatform(p.id)"
+            >
+              <strong>{{ p.label }}</strong>
+              <span class="muted">{{ p.blurb }}</span>
+            </button>
+          }
+        </div>
+        <div class="actions">
+          <button type="button" class="ghost" (click)="rollbackWizard()" [disabled]="busy">← Back</button>
+          <button (click)="confirmPlatform()" [disabled]="busy || !selectedPlatform">Generate for this IDE</button>
+        </div>
+      </section>
+    }
+
+    @if (step === 'generate') {
+      <section class="card animate-in center gen-stage">
+        <h2>Build agents, skills &amp; rules</h2>
+        <p class="muted">
+          Target: {{ platformLabel(project?.platform) }} · agents, skills, rules, and project folders are built together
+        </p>
+        <p class="gen-note">
+          This can take a few minutes depending on how large and complex your project and documents are.
+          Please keep this page open until generation finishes.
+        </p>
+
+        @if (project?.state === 'GENERATING' || busy) {
+          <div class="spinner-wrap" aria-live="polite">
+            <div class="orbit">
+              <span class="planet"></span>
+              <span class="ring ring-a"></span>
+              <span class="ring ring-b"></span>
+              <span class="core"></span>
+            </div>
+            <p class="gen-title">Crafting your workspace</p>
+            <p class="gen-progress">{{ project?.progress || 'Calling LLM…' }}</p>
+            <p class="muted tiny gen-wait-hint">
+              Large briefs and many agents/skills take longer — usually a few minutes.
+            </p>
+            <div class="pulse-dots" aria-hidden="true">
+              <i></i><i></i><i></i>
+            </div>
+          </div>
+        } @else if (blueprintBlocksGenerate) {
+          <div class="banner warn-bg bp-gate">
+            This project has a process blueprint that has not been approved yet. Generation
+            follows the approved process, so review the diagrams and approve them first — or
+            discard the blueprint to generate from the brief alone.
+          </div>
+          <div class="actions">
+            <button type="button" class="ghost" (click)="rollbackWizard()" [disabled]="busy">← Back</button>
+            <button (click)="goToBlueprint()" [disabled]="busy">Review the blueprint</button>
+          </div>
+        } @else {
+          <div class="actions">
+            <button type="button" class="ghost" (click)="rollbackWizard()" [disabled]="busy">← Back</button>
+            <button (click)="startGenerate()" [disabled]="busy">Start generation</button>
+          </div>
+        }
+      </section>
+    }
+
+    @if (step === 'review' && draftPlan) {
+      <section class="card animate-in review-panel">
+        <div class="review-head">
+          <div class="review-title-block">
+            <h2>{{ draftPlan.project_name }}</h2>
+            <div class="summary-card">
+              <div class="summary-card-top">
+                <span class="summary-label">Summary</span>
+                <button type="button" class="ghost tiny" (click)="toggleSummaryEdit()">
+                  {{ editingSummary ? 'Done' : 'Edit' }}
+                </button>
+              </div>
+              @if (editingSummary) {
+                <textarea class="summary-edit" rows="4" [(ngModel)]="draftPlan.summary" (ngModelChange)="markPlanDirty()"></textarea>
+              } @else {
+                <p class="summary-prose">{{ draftPlan.summary }}</p>
+              }
+            </div>
+          </div>
+          <div class="review-actions">
+            <button
+              type="button"
+              class="save-plan-btn"
+              [class.needs-save]="isPlanDirty"
+              [class.is-saved]="!isPlanDirty && hasSavedPlan"
+              (click)="savePlan()"
+              [disabled]="busy || (!isPlanDirty && hasSavedPlan)"
+            >
+              {{ savePlanLabel }}
+            </button>
+            <button type="button" (click)="continueToExport()" [disabled]="busy">
+              {{ busy ? 'Working…' : 'Continue to export' }}
+            </button>
+          </div>
+        </div>
+        @if (saveMessage) {
+          <p class="save-msg">{{ saveMessage }}</p>
+        }
+        <p class="review-hint">
+          Click a row to edit. Prefer <strong>12–22 lines</strong> (max {{ maxBodyLines }}, under 50 — AI chooses length).
+          Skills auto-invoke via description; exporters may include optional <code>scripts/*.py</code>.
+          @if (draftPlan.source_tree?.length) {
+            <br />
+            <strong>Source files: {{ sourceFileCount }}</strong> — the app scaffold, same as the
+            <strong>Files</strong> tab and the README's "Source files".
+            @if (workspaceFileCount) {
+              <strong>Workspace files: {{ workspaceFileCount }}</strong> — everything the tree
+              lists and the zip holds: scaffold + IDE folder + <code>README.md</code> +
+              <code>WORKBREAKDOWN.md</code> + <code>SDD.md</code> +
+              <code>.gitignore</code>@if (isClaudePlatform) {
+                <span> + <code>CLAUDE.md</code></span>
+              }.
+            }
+          }
+        </p>
+        <div class="tabs">
+          <button type="button" class="ghost" [class.on]="reviewTab === 'agents'" (click)="setReviewTab('agents')">
+            Agents ({{ draftPlan.agents.length }})
+          </button>
+          <button type="button" class="ghost" [class.on]="reviewTab === 'skills'" (click)="setReviewTab('skills')">
+            Skills ({{ draftPlan.skills.length }})
+          </button>
+          <button type="button" class="ghost" [class.on]="reviewTab === 'rules'" (click)="setReviewTab('rules')">
+            Rules ({{ draftPlan.rules.length }})
+          </button>
+          <button type="button" class="ghost" [class.on]="reviewTab === 'mcp'" (click)="setReviewTab('mcp')">
+            MCP ({{ draftPlan.mcp_servers.length }})
+          </button>
+          <!--
+            Only for a project that has a blueprint — one without them generates from the brief
+            alone, and an empty tab would be a dead end. `hasExportedDiagrams` reads the file
+            list, so no blueprint request is needed to decide whether to offer this.
+          -->
+          @if (hasExportedDiagrams) {
+            <button
+              type="button"
+              class="ghost"
+              [class.on]="reviewTab === 'diagrams'"
+              (click)="setReviewTab('diagrams')"
+              title="The approved SIPOC, process flow and swimlane these agents were generated from"
+            >
+              Diagrams ({{ previewImages.length }})
+            </button>
+          }
+          <button type="button" class="ghost" [class.on]="reviewTab === 'files'" (click)="setReviewTab('files')">
+            Files ({{ filesTabCount || 0 }})
+          </button>
+        </div>
+
+        <div class="list">
+          @if (reviewTab === 'agents') {
+            @for (a of draftPlan.agents; track a.name; let i = $index) {
+              <div class="item editable" [class.open]="expandedIndex === i">
+                <button type="button" class="item-toggle" (click)="toggleExpand(i)">
+                  <span class="item-meta">
+                    <strong>{{ a.name }}</strong>
+                    <span class="muted tiny">{{ a.description | slice:0:72 }}{{ a.description.length > 72 ? '…' : '' }}</span>
+                  </span>
+                  <span class="line-chip" [ngClass]="lineChipClass(a.system_prompt)">
+                    {{ lineCount(a.system_prompt) }} lines
+                  </span>
+                </button>
+                @if (expandedIndex === i) {
+                  <label>Description <span class="muted tiny">(WHAT + WHEN)</span></label>
+                  <textarea rows="2" [(ngModel)]="a.description" (ngModelChange)="markPlanDirty()"></textarea>
+                  <div class="body-head">
+                    <label>System prompt</label>
+                    <div class="body-head-actions">
+                      @if (contentEditMode) {
+                        <button type="button" class="secondary tiny" (click)="saveCard()" [disabled]="busy">
+                          Save
+                        </button>
+                      }
+                      <button type="button" class="ghost tiny" (click)="toggleContentEditMode()">
+                        {{ contentEditMode ? 'Preview' : 'Edit' }}
+                      </button>
+                    </div>
+                  </div>
+                  @if (contentEditMode) {
+                    <textarea class="code-edit" rows="14" [(ngModel)]="a.system_prompt" (ngModelChange)="markPlanDirty()"></textarea>
+                  } @else {
+                    <div class="md-preview" [innerHTML]="renderMarkdown('agent-' + i, a.system_prompt)"></div>
+                  }
+                  <p class="muted tiny" [class.warn]="lineCount(a.system_prompt) > maxBodyLines">
+                    Prefer 12–22 lines, max {{ maxBodyLines }} under 50 (currently {{ lineCount(a.system_prompt) }}). AI chooses length — do not pad.
+                  </p>
+                  <div class="card-save-row">
+                    <button type="button" class="secondary" (click)="saveCard()" [disabled]="busy">Save card</button>
+                    @if (saveMessage) {
+                      <span class="muted tiny">{{ saveMessage }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+          @if (reviewTab === 'skills') {
+            @for (s of draftPlan.skills; track s.name; let i = $index) {
+              <div class="item editable" [class.open]="expandedIndex === i">
+                <button type="button" class="item-toggle" (click)="toggleExpand(i)">
+                  <span class="item-meta">
+                    <strong>{{ s.name }}</strong>
+                    <span class="muted tiny">auto-invoke · {{ s.description | slice:0:64 }}{{ s.description.length > 64 ? '…' : '' }}</span>
+                  </span>
+                  <span class="line-chip" [ngClass]="lineChipClass(s.instructions)">
+                    {{ lineCount(s.instructions) }} lines
+                  </span>
+                </button>
+                @if (expandedIndex === i) {
+                  <label>Description <span class="muted tiny">(third person — drives auto-discovery)</span></label>
+                  <textarea rows="2" [(ngModel)]="s.description" (ngModelChange)="markPlanDirty()"></textarea>
+                  <div class="body-head">
+                    <label>Instructions</label>
+                    <div class="body-head-actions">
+                      @if (contentEditMode) {
+                        <button type="button" class="secondary tiny" (click)="saveCard()" [disabled]="busy">
+                          Save
+                        </button>
+                      }
+                      <button type="button" class="ghost tiny" (click)="toggleContentEditMode()">
+                        {{ contentEditMode ? 'Preview' : 'Edit' }}
+                      </button>
+                    </div>
+                  </div>
+                  @if (contentEditMode) {
+                    <textarea class="code-edit" rows="14" [(ngModel)]="s.instructions" (ngModelChange)="markPlanDirty()"></textarea>
+                  } @else {
+                    <div class="md-preview" [innerHTML]="renderMarkdown('skill-' + i, s.instructions)"></div>
+                  }
+                  <p class="muted tiny" [class.warn]="lineCount(s.instructions) > maxBodyLines">
+                    Prefer 12–22 lines, max {{ maxBodyLines }} under 50. Official skill: name + description; optional scripts/*.py.
+                  </p>
+                  <div class="card-save-row">
+                    <button type="button" class="secondary" (click)="saveCard()" [disabled]="busy">Save card</button>
+                    @if (saveMessage) {
+                      <span class="muted tiny">{{ saveMessage }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+          @if (reviewTab === 'rules') {
+            <p class="muted tiny">{{ rulesFolderHint }}</p>
+            @for (r of draftPlan.rules; track r.name; let i = $index) {
+              <div class="item editable" [class.open]="expandedIndex === i">
+                <button type="button" class="item-toggle" (click)="toggleExpand(i)">
+                  <span class="item-meta">
+                    <strong>{{ ruleFileName(r) }}</strong>
+                    <span class="muted tiny">{{ ruleModeLabel(r) }}</span>
+                  </span>
+                  <span class="line-chip" [ngClass]="lineChipClass(r.body)">
+                    {{ lineCount(r.body) }} lines
+                  </span>
+                </button>
+                @if (expandedIndex === i) {
+                  <div class="rule-flags">
+                    <label class="check">
+                      <input type="checkbox" [(ngModel)]="r.always_apply" (ngModelChange)="markPlanDirty()" />
+                      Always apply (universal rule)
+                    </label>
+                    <label>
+                      Globs <span class="muted tiny">(comma-separated; used when not always-on)</span>
+                      <input
+                        type="text"
+                        [ngModel]="(r.globs || []).join(', ')"
+                        (ngModelChange)="setRuleGlobs(r, $event)"
+                        placeholder="frontend/**/*.ts, portal/**/*.ts"
+                      />
+                    </label>
+                  </div>
+                  <label>Description</label>
+                  <textarea rows="2" [(ngModel)]="r.description" (ngModelChange)="markPlanDirty()"></textarea>
+                  <div class="body-head">
+                    <label>Rule body</label>
+                    <div class="body-head-actions">
+                      @if (contentEditMode) {
+                        <button type="button" class="secondary tiny" (click)="saveCard()" [disabled]="busy">
+                          Save
+                        </button>
+                      }
+                      <button type="button" class="ghost tiny" (click)="toggleContentEditMode()">
+                        {{ contentEditMode ? 'Preview' : 'Edit' }}
+                      </button>
+                    </div>
+                  </div>
+                  @if (contentEditMode) {
+                    <textarea class="code-edit" rows="12" [(ngModel)]="r.body" (ngModelChange)="markPlanDirty()"></textarea>
+                  } @else {
+                    <div class="md-preview" [innerHTML]="renderMarkdown('rule-' + i, r.body)"></div>
+                  }
+                  <p class="muted tiny" [class.warn]="lineCount(r.body) > maxBodyLines">
+                    Prefer 10–18 lines, max {{ maxBodyLines }} under 50. Always-on → <code>alwaysApply: true</code>; scoped → globs only.
+                  </p>
+                  <div class="card-save-row">
+                    <button type="button" class="secondary" (click)="saveCard()" [disabled]="busy">Save card</button>
+                    @if (saveMessage) {
+                      <span class="muted tiny">{{ saveMessage }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+          @if (reviewTab === 'mcp') {
+            @for (m of draftPlan.mcp_servers; track m.name) {
+              <div class="item">
+                <strong>{{ m.name }}</strong>
+                <p class="muted">{{ m.command }} {{ (m.args || []).join(' ') }}</p>
+              </div>
+            }
+            @if (!draftPlan.mcp_servers.length) {
+              <p class="muted">No MCP servers suggested.</p>
+            }
+          }
+          @if (reviewTab === 'diagrams') {
+            <h4 class="dg-group-title">Blueprint — the approved process</h4>
+            <p class="muted tiny">
+              The approved process these agents, skills and rules were generated to follow.
+              These exact PNGs ship in the zip under <code>docs/diagrams/</code> — the version
+              is in each filename, and the workspace <code>README.md</code> explains what each
+              one is for.
+            </p>
+            <ng-container
+              *ngTemplateOutlet="diagramViewerTpl; context: { tabs: true }"
+            ></ng-container>
+            <div class="bp-file-line">
+              @for (p of blueprintPreviewImages; track p) {
+                <button type="button" class="file-chip" (click)="openWorkspaceFile(p)">
+                  {{ p }}
+                </button>
+              }
+            </div>
+            @if (blueprintError) {
+              <p class="muted tiny bp-note">{{ blueprintError }}</p>
+            }
+            <p class="muted tiny">
+              To change the process itself, go back to the Blueprint step — a revision redraws
+              all three views, and the agents are regenerated from the new model.
+            </p>
+            <!--
+              The other three of the six this tab counts. They were reachable only by opening a
+              `docs/architecture/` row in the Files pane, so the tab said "Diagrams (6)" and
+              showed three — and nothing said these come from the solution design rather than
+              from the blueprint, which is what a reader most needs to know about them.
+            -->
+            @if (hasArchitectureViews) {
+              <h4 class="dg-group-title">Architecture — from <code>SDD.md</code> §3.2</h4>
+              <p class="muted tiny">
+                The three architectural views the solution design document embeds in
+                <button type="button" class="file-chip inline" (click)="openSolutionDesign()">
+                  SDD.md
+                </button>
+                §3.2 — logical, development and deployment. Redrawn from the current design on
+                every export and shipped under <code>docs/architecture/</code>. They describe the
+                system being built; the blueprint above describes the process it automates.
+              </p>
+              <ng-container
+                *ngTemplateOutlet="archViewerTpl; context: { tabs: true }"
+              ></ng-container>
+              <div class="bp-file-line">
+                @for (p of architecturePreviewImages; track p) {
+                  <button type="button" class="file-chip" (click)="openWorkspaceFile(p)">
+                    {{ p }}
+                  </button>
+                }
+                <button type="button" class="file-chip" (click)="openSolutionDesign()">
+                  SDD.md
+                </button>
+              </div>
+              <!-- The document itself, to hand to somebody who does not have this app open. -->
+              <div class="bp-file-line sdd-download-line">
+                <ng-container *ngTemplateOutlet="sddDownloadTpl"></ng-container>
+              </div>
+            }
+          }
+          @if (reviewTab === 'files') {
+            <div class="file-browser">
+              <aside class="file-list file-tree">
+                <div class="file-tree-toolbar">
+                  <button
+                    type="button"
+                    class="ghost tiny"
+                    (click)="refreshFileTree()"
+                    [disabled]="busy || filesPreviewBusy"
+                    title="Re-render the workspace from the saved plan — picks up edits you saved, and WORKBREAKDOWN.md / SDD.md once they finish generating. Does not regenerate agents or skills."
+                  >
+                    Refresh file tree
+                  </button>
+                  @if (hasOpenFolders) {
+                    <button type="button" class="ghost tiny" (click)="collapseAllFolders()">Collapse all</button>
+                  } @else {
+                    <button type="button" class="ghost tiny" (click)="expandAllFolders()" [disabled]="!fileTree.length">
+                      Expand all
+                    </button>
+                  }
+                  @if (filesPreviewBusy) {
+                    <span class="muted tiny">Loading workspace files…</span>
+                  } @else if (wbsGenerating) {
+                    <span class="muted tiny">{{
+                      wbsMessage || 'Generating WORKBREAKDOWN.md and SDD.md…'
+                    }}</span>
+                  } @else if (wbsMessage) {
+                    <span class="muted tiny">{{ wbsMessage }}</span>
+                  } @else if (fileRefreshMessage) {
+                    <span class="muted tiny">{{ fileRefreshMessage }}</span>
+                  }
+                </div>
+                <ng-container *ngTemplateOutlet="treeTpl"></ng-container>
+                @if (!fileTree.length && !filesPreviewBusy) {
+                  <p class="muted">No files yet — save plan after generate, or click Refresh file tree.</p>
+                }
+              </aside>
+              <div class="file-editor">
+                @if (selectedFile) {
+                  <div class="file-editor-head">
+                    <strong>{{ selectedFile }}</strong>
+                    <!--
+                      A PNG row has nothing to copy, edit or save — it is an exported
+                      render, and the plan it came from is the blueprint, not this text.
+                      So the whole action group is text-file only.
+                    -->
+                    @if (!selectedFileDiagram && !selectedFileArchitecture) {
+                      <div class="file-editor-actions">
+                        <button type="button" class="ghost tiny" (click)="copySelectedFileContent()" [disabled]="!selectedFileBody">
+                          Copy
+                        </button>
+                        @if (fileCopyMessage) {
+                          <span class="muted tiny">{{ fileCopyMessage }}</span>
+                        }
+                        @if (isMarkdownFile(selectedFile)) {
+                          <button type="button" class="ghost tiny" (click)="toggleFileEditMode()">
+                            {{ fileEditMode ? 'Preview' : 'Edit' }}
+                          </button>
+                        }
+                        @if (fileEditMode || !isMarkdownFile(selectedFile)) {
+                          <button type="button" class="save-file-btn" (click)="applyFileEditToPlan()" [disabled]="busy">
+                            {{ busy ? 'Saving…' : 'Save' }}
+                          </button>
+                        }
+                        @if (isSolutionDesignFile(selectedFile)) {
+                          <ng-container *ngTemplateOutlet="sddDownloadTpl"></ng-container>
+                        }
+                      </div>
+                    }
+                  </div>
+                  @if (selectedFileDiagram) {
+                    <ng-container *ngTemplateOutlet="diagramViewerTpl"></ng-container>
+                  } @else if (selectedFileArchitecture) {
+                    <ng-container *ngTemplateOutlet="archViewerTpl"></ng-container>
+                  } @else {
+                    <!--
+                      Both panes stay mounted and one is hidden, rather than @if/@else
+                      destroying and rebuilding them. Re-creating the preview meant
+                      re-parsing the file into DOM on every toggle — ~463 KB of HTML and
+                      ~1700 elements for this repo's largest WORKBREAKDOWN.md — which is
+                      what made Edit feel slow. `hidden` makes it a style flip instead.
+                    -->
+                    <textarea
+                      class="code-edit file-body"
+                      rows="22"
+                      [hidden]="!fileEditMode && isMarkdownFile(selectedFile)"
+                      [(ngModel)]="selectedFileBody"
+                    ></textarea>
+                    @if (isMarkdownFile(selectedFile)) {
+                      <div
+                        class="md-preview file-body"
+                        [hidden]="fileEditMode"
+                        [innerHTML]="renderMarkdown('file-' + (selectedFile || ''), filePreviewBody)"
+                        (click)="onPreviewClick($event)"
+                      ></div>
+                    }
+                  }
+                } @else {
+                  <p class="muted">Select a file to preview and edit.</p>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!--
+      One flat @for over the rows that are actually visible, not a template that
+      re-enters itself per folder depth. Opening a folder now splices its children in
+      and every other row keeps its DOM, so expanding is instant on a 139-file tree.
+    -->
+    <!--
+      The viewer, declared once and used in four places: the Blueprint step, Review's
+      **Diagrams** tab, and either file browser when an exported PNG is the selected row. The
+      zoom, fit, 100%, pan and full-screen behaviour lives in `ac-diagram-viewer`, which the
+      admin console mounts too — so an admin reviewing someone else's blueprint gets exactly
+      these controls rather than a second implementation that drifts.
+
+      `let-tabs` decides whether the three-way switcher is drawn: the two places that show the
+      blueprint as its own subject want it, the two file browsers already have a file tree
+      doing the choosing.
+    -->
+    <ng-template #diagramViewerTpl let-tabs="tabs">
+      <ac-diagram-viewer
+        [showTabs]="!!tabs"
+        [active]="blueprintTab"
+        (activeChange)="showDiagramKind($event)"
+        [urls]="activeDiagramUrls"
+        [images]="blueprint?.images || []"
+        [loading]="historyLoading || blueprintLoading"
+        [title]="blueprint?.model?.title || ''"
+        [caption]="diagramCaption"
+        [version]="historyVersion ?? blueprint?.version ?? 1"
+        [live]="!blueprintDrawing"
+      >
+        <!--
+          Projected into the viewer, above the image, so it follows it into full screen: an old
+          version on a full screen with no marker on it is indistinguishable from the current one.
+        -->
+        @if (historyVersion !== null) {
+          <div class="bp-history-bar">
+            <span class="bp-pill hist">Viewing v{{ historyVersion }}</span>
+            <span class="muted tiny">
+              Redrawn from the change history — v{{ blueprint?.version }} is the current
+              version, and the text below it always describes.
+            </span>
+            <button type="button" class="ghost tiny" (click)="backToLatest()">
+              Back to v{{ blueprint?.version }}
+            </button>
+          </div>
+        }
+      </ac-diagram-viewer>
+    </ng-template>
+
+    <!--
+      SDD §3.2's three views, when one of the `docs/architecture/` rows is the selected file.
+
+      The same `ac-diagram-viewer` the blueprint uses, so these get fit / 100% / drag-to-pan /
+      full screen rather than a shrunken picture in a wide white box. It used to be a plain
+      `<img>` capped at 62vh, which on a 2526 × 3078 render meant a 540px-wide column of
+      unreadable boxes with empty margins either side.
+
+      No tab strip and no version: the file tree does the choosing (← → still switch, and
+      `showArchitectureKind` moves the selection with them), and these are redrawn from the
+      current design, so there is no version to badge. `scale` is passed because the
+      architecture endpoint returns bytes only — see the input's note.
+    -->
+    <!--
+      `tabs` picks which of the two callers this is. In the Files pane the file tree does the
+      choosing, so the strip is off and the active view is the selected row; in the Diagrams tab
+      there is no tree, so the viewer carries its own strip over `architectureTab`.
+    -->
+    <ng-template #archViewerTpl let-tabs="tabs">
+      @let archKind = tabs ? architectureTab : selectedFileArchitecture?.kind ?? null;
+      @if (archKind) {
+        <ac-diagram-viewer
+          [views]="architectureViewerViews"
+          [showTabs]="!!tabs"
+          [active]="archKind"
+          (activeChange)="tabs ? setArchitectureTab($event) : showArchitectureKind($event)"
+          [urls]="architectureUrls"
+          [scale]="architectureRenderScale"
+          [loading]="!architectureUrlFor(archKind)"
+          [title]="project?.name || 'this system'"
+          caption="the same picture SDD.md §3.2 embeds, redrawn from the current design each export"
+          [downloadStem]="archKind + '-view'"
+        ></ac-diagram-viewer>
+      }
+    </ng-template>
+
+    <!--
+      SDD.md as a document somebody can send on — declared once and used in three places: either
+      file browser when SDD.md is the selected row, and the Diagrams tab beside the figures.
+
+      Both formats come off one parse of the markdown this pane is previewing (see
+      `documents.py`), so the PDF and the DOCX are the same document with §3.2's three views
+      embedded rather than two renderings that drift. Downloaded as a blob because the token
+      travels in a header — a bare URL in an `<a href>` would save a 401 page.
+    -->
+    <ng-template #sddDownloadTpl>
+      <button
+        type="button"
+        class="ghost tiny"
+        (click)="downloadSolutionDesign('pdf')"
+        [disabled]="!!sddDownloading"
+        title="SDD.md as a PDF — the same markdown shown here, with the three architecture views embedded."
+      >
+        {{ sddDownloading === 'pdf' ? 'Building PDF…' : 'Download PDF' }}
+      </button>
+      <button
+        type="button"
+        class="ghost tiny"
+        (click)="downloadSolutionDesign('docx')"
+        [disabled]="!!sddDownloading"
+        title="SDD.md as a Word document — same content and layout as the PDF, editable."
+      >
+        {{ sddDownloading === 'docx' ? 'Building DOCX…' : 'Download DOCX' }}
+      </button>
+      @if (sddDownloadMessage) {
+        <span class="muted tiny">{{ sddDownloadMessage }}</span>
+      }
+    </ng-template>
+
+    <ng-template #treeTpl>
+      @for (row of fileTreeRows; track row.key) {
+        @if (row.isFolder) {
+          <button
+            type="button"
+            class="tree-folder-btn"
+            [style.paddingLeft.px]="4 + row.depth * 12"
+            [attr.aria-expanded]="row.node.expanded"
+            [attr.title]="row.node.dir"
+            (click)="toggleFolder(row.node, $event)"
+          >
+            <span class="tree-chevron" [class.open]="row.node.expanded" aria-hidden="true">▸</span>
+            <span class="tree-folder-name">{{ row.node.name }}/</span>
+            <span class="muted tiny">{{ row.node.children!.length }}</span>
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="file-item tree-file"
+            [style.paddingLeft.px]="20 + row.depth * 12"
+            [class.on]="selectedFile === row.node.path"
+            [attr.title]="row.node.path"
+            (click)="selectExportFile(row.node.path!)"
+          >
+            {{ row.node.name }}
+          </button>
+        }
+      }
+    </ng-template>
+
+    @if (step === 'export') {
+      <section class="card animate-in">
+        <h2>Export workspace</h2>
+        <p class="muted">
+          Download a zip formatted for {{ platformLabel(project?.platform) }}.
+          @if (workspaceFileCount) {
+            <br />
+            <strong>{{ workspaceFileCount }} workspace files</strong> go in the zip —
+            {{ sourceFileCount }} app scaffold files plus the IDE folder,
+            <code>README.md</code>, <code>WORKBREAKDOWN.md</code>, the
+            <code>SDD.md</code> solution design document with its three architecture diagrams
+            in <code>docs/architecture/</code>, and a stack-specific
+            <code>.gitignore</code>@if (isClaudePlatform) {
+              <span>, plus <code>CLAUDE.md</code> that Claude Code loads at the start of
+              every session</span>
+            }.
+          }
+        </p>
+        <div class="file-browser compact">
+          <aside class="file-list file-tree">
+            <div class="file-tree-toolbar">
+              @if (hasOpenFolders) {
+                <button type="button" class="ghost tiny" (click)="collapseAllFolders()">Collapse all</button>
+              } @else {
+                <button type="button" class="ghost tiny" (click)="expandAllFolders()" [disabled]="!fileTree.length">
+                  Expand all
+                </button>
+              }
+              <span class="muted tiny">{{ workspaceFileCount }} workspace files</span>
+            </div>
+            <ng-container *ngTemplateOutlet="treeTpl"></ng-container>
+          </aside>
+          <div class="file-editor">
+            @if (selectedFile) {
+              <div class="file-editor-head">
+                <strong>{{ selectedFile }}</strong>
+                <!-- Copy/Edit/Save are text-only — see the Files tab above. -->
+                @if (!selectedFileDiagram && !selectedFileArchitecture) {
+                  <div class="file-editor-actions">
+                    <button type="button" class="ghost tiny" (click)="copySelectedFileContent()" [disabled]="!selectedFileBody">
+                      Copy
+                    </button>
+                    @if (fileCopyMessage) {
+                      <span class="muted tiny">{{ fileCopyMessage }}</span>
+                    }
+                    @if (isMarkdownFile(selectedFile)) {
+                      <button type="button" class="ghost tiny" (click)="toggleFileEditMode()">
+                        {{ fileEditMode ? 'Preview' : 'Edit' }}
+                      </button>
+                    }
+                    @if (fileEditMode || !isMarkdownFile(selectedFile)) {
+                      <button type="button" class="save-file-btn" (click)="applyFileEditToPlan()" [disabled]="busy">
+                        {{ busy ? 'Saving…' : 'Save' }}
+                      </button>
+                    }
+                    @if (isSolutionDesignFile(selectedFile)) {
+                      <ng-container *ngTemplateOutlet="sddDownloadTpl"></ng-container>
+                    }
+                  </div>
+                }
+              </div>
+              @if (saveMessage && (fileEditMode || selectedFile) && !selectedFileDiagram && !selectedFileArchitecture) {
+                <p class="save-msg tiny">{{ saveMessage }}</p>
+              }
+              @if (selectedFileDiagram) {
+                <ng-container *ngTemplateOutlet="diagramViewerTpl"></ng-container>
+              } @else if (selectedFileArchitecture) {
+                <ng-container *ngTemplateOutlet="archViewerTpl"></ng-container>
+              } @else {
+                <!-- Kept mounted and hidden — see the Files tab above. -->
+                <textarea
+                  class="code-edit file-body"
+                  rows="18"
+                  [hidden]="!fileEditMode && isMarkdownFile(selectedFile)"
+                  [(ngModel)]="selectedFileBody"
+                ></textarea>
+                @if (isMarkdownFile(selectedFile)) {
+                  <div
+                    class="md-preview file-body"
+                    [hidden]="fileEditMode"
+                    [innerHTML]="renderMarkdown('file-export-' + (selectedFile || ''), filePreviewBody)"
+                    (click)="onPreviewClick($event)"
+                  ></div>
+                }
+              }
+            } @else {
+              <p class="muted">Select a file to preview and edit.</p>
+            }
+          </div>
+        </div>
+        <div class="actions">
+          <button (click)="doExport()" [disabled]="busy">
+            {{ busy ? 'Downloading…' : 'Download .zip & go to Sessions' }}
+          </button>
+          <button
+            class="secondary"
+            type="button"
+            (click)="refreshFileTree()"
+            [disabled]="busy"
+            title="Re-render the workspace from the saved plan — picks up edits you saved, and WORKBREAKDOWN.md / SDD.md once they finish generating. Does not regenerate agents or skills."
+          >
+            Refresh file tree
+          </button>
+          @if (fileRefreshMessage) {
+            <span class="muted tiny">{{ fileRefreshMessage }}</span>
+          }
+        </div>
+      </section>
+    }
+  </main>
+</div>

@@ -1,0 +1,22 @@
+You write ONE batch of WORKBREAKDOWN.md phases as JSON.
+
+Return ONLY valid JSON:
+{
+  "phases": [
+    {
+      "number": 1,
+      "title": "Short phase title (match outline)",
+      "objectives": ["3-5 bullets tied to document requirements"],
+      "tasks": ["6-10 actionable checkbox strings with backend/... or frontend/... paths"],
+      "testing_strategy": ["3-5 bullets"],
+      "acceptance": ["5-8 pass/fail checks"],
+      "agent_prompt": "5-8 lines for IDE copy-paste (plain text, no fences)"
+    }
+  ]
+}
+
+Rules:
+- Write ONLY the phases listed in the user message — exact numbers and titles from the outline.
+- Ground every task in the user's uploaded documents — name concrete features, roles, APIs.
+- Stay concise — no filler. Each phase ~40-80 lines when rendered.
+- Do NOT repeat content from other phases.

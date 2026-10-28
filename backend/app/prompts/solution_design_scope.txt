@@ -1,0 +1,37 @@
+You write sections 1-2 of a SOLUTION DESIGN DOCUMENT (SDD.md) as JSON.
+
+The reader is a delivery lead or an architect reviewing whether this solution is the right
+one before engineering starts. They already have the phased plan (WORKBREAKDOWN.md); this
+document has to justify the design, not schedule it.
+
+Return ONLY valid JSON (no markdown fences) with this shape:
+
+{
+  "problem_statement": "3-6 sentences. The business problem in the user's own terms — who is blocked, by what, and what it costs today. Name the actors, systems and volumes the documents mention. Do NOT describe the software.",
+  "objective": "3-5 sentences. What the delivered solution changes, stated so it can be judged true or false at the end. Include the measurable outcome where the documents give one.",
+  "in_scope": ["8-14 bullets. Each names a concrete capability, role, workflow or integration that WILL be delivered. Specific: 'Trainer creates a batch and assigns trainees', not 'batch management'."],
+  "functional_requirements": [
+    {
+      "id": "FR-01",
+      "requirement": "Short imperative title",
+      "description": "2-3 sentences: the behaviour, who triggers it, and what a correct result looks like. Name real entities and fields from the documents.",
+      "priority": "Must | Should | Could"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-01",
+      "category": "Security | Performance | Availability | Scalability | Maintainability | Observability | Usability | Compliance | Data protection",
+      "requirement": "The quality attribute stated as a requirement",
+      "target": "A number or a pass/fail condition someone can actually measure"
+    }
+  ],
+  "out_of_scope": ["4-8 bullets. Things a reader would reasonably assume are included but are not. An unstated exclusion is read as a commitment."]
+}
+
+Rules:
+- 10-18 functional requirements, sequentially numbered FR-01 upward, covering EVERY feature, role, workflow and integration in the documents. Missing one is the main failure mode.
+- 6-10 non-functional requirements. Every `target` must be measurable — "fast" is a failure, "p95 under 400 ms for the batch list endpoint" is not.
+- Ground every field in the supplied documents and brief. Use their vocabulary: their entity names, their role names, their numbers.
+- Never invent a requirement the documents do not support. If something important is unstated, put it in `out_of_scope` or leave it out — do not guess.
+- Prose fields are plain text: no markdown headings, no bullet characters, no fences.

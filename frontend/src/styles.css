@@ -1,0 +1,196 @@
+:root {
+  --bg0: #0c1210;
+  --bg1: #14201c;
+  --bg2: #1c2e28;
+  --ink: #e8f0ec;
+  --muted: #9bb0a6;
+  --accent: #3dcf9a;
+  --accent-dim: #2a9e74;
+  --warn: #e8b86d;
+  --danger: #e07a6a;
+  --line: rgba(232, 240, 236, 0.12);
+  --card: rgba(20, 32, 28, 0.85);
+  --radius: 16px;
+  --font: "DM Sans", system-ui, sans-serif;
+  --display: "Instrument Serif", Georgia, serif;
+
+  /*
+   * How wide the app is allowed to get, in one place. The wizard, the session board and the
+   * admin console each used to pick their own number (1080 / 1180 / 1080), which on a 1440p
+   * or wider screen left a third of the window empty on either side while the panes that
+   * actually need room — the file tree next to its editor, the diagram viewer, the KPI row —
+   * were squeezed into the middle. They now share this token, so they line up when you move
+   * between them and there is only one number to change.
+   *
+   * Capped rather than fluid: past ~1600px a full-bleed layout stops helping. The eye has to
+   * travel further between a row's label and its value than it saves in scrolling, and the
+   * cards turn into letterbox strips.
+   */
+  --shell-max: 1600px;
+  --shell-pad: clamp(1.25rem, 2.4vw, 2.25rem);
+
+  /*
+   * The longest line of running prose we let the layout produce. A wider shell must not turn a
+   * paragraph into a 200-character line — the return sweep to the next line is where the eye
+   * loses its place. Blocks of text opt into this; grids, tables and toolbars do not.
+   */
+  --read-max: 112ch;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font);
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(61, 207, 154, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(232, 184, 109, 0.12), transparent 50%),
+    linear-gradient(165deg, var(--bg0), var(--bg1) 45%, #0a100e);
+}
+
+button, input, textarea, select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1.35rem;
+  background: var(--accent);
+  color: #062118;
+  font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  /* Snappier than 160ms and no layout-affecting properties — stays 60fps. */
+  transition: transform 90ms ease-out, background 90ms ease-out,
+    box-shadow 120ms ease-out, border-color 90ms ease-out, opacity 90ms ease-out;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #56e0ad;
+  box-shadow: 0 8px 24px rgba(61, 207, 154, 0.25);
+}
+
+/* Immediate press feedback — the click registers visually before the request. */
+button:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 2px 8px rgba(61, 207, 154, 0.2);
+  transition-duration: 40ms;
+}
+
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(61, 207, 154, 0.35);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+button.ghost:hover:not(:disabled) {
+  background: rgba(61, 207, 154, 0.12);
+  border-color: rgba(61, 207, 154, 0.45);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+button.ghost:active:not(:disabled) {
+  background: rgba(61, 207, 154, 0.18);
+}
+
+button.secondary {
+  background: var(--bg2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: #24382f;
+  border-color: rgba(61, 207, 154, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+/* Inline busy spinner for buttons that own an in-flight request. */
+.btn-spinner {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  margin-right: 0.45rem;
+  vertical-align: -0.08em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: btn-spin 0.6s linear infinite;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+button.is-busy {
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button, button:active:not(:disabled), button:hover:not(:disabled) {
+    transform: none;
+    transition-duration: 1ms;
+  }
+  .btn-spinner { animation-duration: 1.4s; }
+}
+
+textarea, input[type="text"] {
+  width: 100%;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  outline: none;
+}
+
+textarea:focus, input[type="text"]:focus {
+  border-color: var(--accent-dim);
+  box-shadow: 0 0 0 3px rgba(61, 207, 154, 0.15);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  /* Grows a little with the shell: a flat 1.25rem gutter on a 1600px-wide card reads as an
+   * edge-to-edge slab, and on a phone 1.75rem would eat the content. */
+  padding: clamp(1.25rem, 1.5vw, 1.75rem);
+  backdrop-filter: blur(10px);
+}
+
+/*
+ * Any card holding a full-screen diagram viewer — the wizard's Blueprint step, Review's
+ * Diagrams tab, either file browser, and the admin console's session panel.
+ *
+ * Global rather than per-component because it has to reach *up* from the viewer to the card
+ * around it, and the viewer is now its own component (`ac-diagram-viewer`): a scoped rule in
+ * either component would only ever see one side of that boundary. `.animate-in` (rise) is
+ * declared with `both`, so its finished `transform: translateY(0)` stays applied to the card
+ * forever, and a `position: fixed` fallback resolves against it — which pinned the "full
+ * screen" viewer inside the card, header still visible and the diagram clipped on the right.
+ */
+.card:has(.bp-viewer.fs) {
+  animation: none;
+  transform: none;
+}
+
+.muted { color: var(--muted); }
+.danger { color: var(--danger); }
+.warn { color: var(--warn); }

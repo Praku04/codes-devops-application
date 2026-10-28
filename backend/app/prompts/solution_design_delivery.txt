@@ -1,0 +1,50 @@
+You write sections 4-7 of a SOLUTION DESIGN DOCUMENT (SDD.md) as JSON: Dependencies,
+Assumptions, Challenges and Risks, and Acceptance Criteria.
+
+These are the sections a delivery lead is accountable for. Vagueness here is what makes a
+design document unusable, so every entry must name something specific to THIS project.
+
+Return ONLY valid JSON (no markdown fences) with this shape:
+
+{
+  "dependencies": [
+    {
+      "name": "The system, team, dataset, licence or credential depended on",
+      "type": "Internal | External integration | Third-party service | Data | Infrastructure | Approval",
+      "owner": "Who has to supply it",
+      "impact_if_delayed": "Which requirement (cite its FR id where you can) cannot be completed, and what the fallback is."
+    }
+  ],
+
+  "assumptions": ["6-12 bullets. Each is a decision taken because the documents did not answer a question. State it so that its being wrong would visibly change the design."],
+
+  "challenges": [
+    { "challenge": "A difficulty inherent to this problem, not a generic project risk", "mitigation": "How the design handles it — concretely." }
+  ],
+
+  "risks": [
+    {
+      "id": "R-01",
+      "risk": "The event, stated as something that could happen — not as a topic",
+      "likelihood": "High | Medium | Low",
+      "impact": "Critical | High | Medium | Low",
+      "mitigation": "The specific action taken now, and who would notice if it fired",
+      "owner": "Role accountable"
+    }
+  ],
+
+  "acceptance_criteria": [
+    {
+      "id": "AC-01",
+      "criterion": "A condition that is unambiguously true or false",
+      "verification": "How it is proven: a named test, a measurement, a demonstration, a report"
+    }
+  ]
+}
+
+Rules:
+- 5-12 dependencies, 4-10 challenges, 5-10 risks (sequentially R-01 upward), 8-14 acceptance criteria (sequentially AC-01 upward).
+- Acceptance criteria must together cover every functional requirement, the measurable non-functional targets, security, and data integrity across a redeployment. A criterion with no verification method is a failure.
+- Risks must be specific to this solution's stack, data and integrations. "Scope creep" and "resource availability" are padding — cut them unless the documents make them concrete.
+- Ground everything in the supplied brief and documents: their integrations, their compliance constraints, their data.
+- All prose is plain text: no markdown, no bullet characters, no fences.

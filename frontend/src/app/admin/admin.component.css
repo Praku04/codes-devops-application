@@ -1,0 +1,997 @@
+.admin-shell {
+  --admin-ink: #e8f2ec;
+  --admin-muted: #8fa399;
+  --admin-line: rgba(232, 242, 236, 0.12);
+  --admin-card: rgba(8, 18, 14, 0.72);
+  --admin-accent: #3dcf9a;
+  --admin-warn: #e8b86d;
+  --admin-danger: #e07a6a;
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 1.75rem var(--shell-pad) 4rem;
+  color: var(--admin-ink);
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.25rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 1.35rem;
+  padding: 1.35rem 1.4rem;
+  border-radius: 20px;
+  border: 1px solid var(--admin-line);
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(61, 207, 154, 0.16), transparent 55%),
+    radial-gradient(ellipse at 100% 0%, rgba(232, 184, 109, 0.08), transparent 40%),
+    var(--admin-card);
+}
+
+.eyebrow {
+  margin: 0;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: var(--admin-accent);
+}
+
+.hero h1 {
+  font-family: var(--display, Georgia, serif);
+  font-weight: 400;
+  font-size: clamp(2.4rem, 5vw, 3.4rem);
+  margin: 0.2rem 0 0.4rem;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--admin-muted);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.who {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--admin-line);
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.85rem;
+  color: var(--admin-muted);
+}
+
+.who-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(61, 207, 154, 0.2);
+}
+
+.btn {
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 90ms ease-out, background 90ms ease-out, border-color 90ms ease-out;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 40ms;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn.ghost {
+  background: rgba(0, 0, 0, 0.28);
+  border-color: var(--admin-line);
+  color: var(--admin-ink);
+}
+
+.btn.ghost:hover:not(:disabled) {
+  border-color: rgba(61, 207, 154, 0.45);
+  color: var(--admin-accent);
+  transform: translateY(-1px);
+}
+
+.btn.approve {
+  background: var(--admin-accent);
+  color: #06140f;
+  font-weight: 650;
+}
+
+.btn.approve:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.btn.reject {
+  background: transparent;
+  border-color: rgba(224, 122, 106, 0.45);
+  color: #f0c2ba;
+}
+
+.btn.reject:hover:not(:disabled) {
+  background: rgba(224, 122, 106, 0.12);
+}
+
+/* Delete is irreversible, so it reads heavier than Reject. */
+.btn.danger {
+  background: rgba(224, 122, 106, 0.16);
+  border-color: rgba(224, 122, 106, 0.6);
+  color: #ffd2ca;
+  font-weight: 600;
+}
+
+.btn.danger:hover:not(:disabled) {
+  background: var(--admin-danger);
+  border-color: var(--admin-danger);
+  color: #1a0806;
+  transform: translateY(-1px);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1.1rem;
+}
+
+.stat {
+  text-align: left;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-card);
+  border-radius: 16px;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  color: inherit;
+  transition: border-color 90ms ease-out, transform 90ms ease-out, background 90ms ease-out;
+  touch-action: manipulation;
+}
+
+.stat:hover,
+.stat.on {
+  border-color: rgba(61, 207, 154, 0.45);
+  transform: translateY(-2px);
+  background: rgba(61, 207, 154, 0.08);
+}
+
+.stat:active {
+  transform: translateY(0) scale(0.985);
+  transition-duration: 40ms;
+}
+
+.stat-num {
+  display: block;
+  font-family: var(--display, Georgia, serif);
+  font-size: 1.85rem;
+  line-height: 1;
+  color: var(--admin-accent);
+}
+
+.stat-num.warn { color: var(--admin-warn); }
+.stat-num.danger { color: var(--admin-danger); }
+
+.stat-label {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--admin-muted);
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.filters {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border: 1px solid var(--admin-line);
+  background: transparent;
+  color: var(--admin-muted);
+  border-radius: 999px;
+  padding: 0.38rem 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 90ms ease-out, background 90ms ease-out, color 90ms ease-out,
+    transform 90ms ease-out;
+  touch-action: manipulation;
+}
+
+.chip:active {
+  transform: scale(0.96);
+  transition-duration: 40ms;
+}
+
+.chip.on,
+.chip:hover {
+  border-color: rgba(61, 207, 154, 0.5);
+  color: var(--admin-accent);
+  background: rgba(61, 207, 154, 0.1);
+}
+
+.tip { margin: 0; color: var(--admin-muted); }
+
+.banner {
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.banner.danger {
+  background: rgba(224, 122, 106, 0.14);
+  border: 1px solid rgba(224, 122, 106, 0.35);
+  color: #f0c2ba;
+}
+
+.banner.ok {
+  background: rgba(61, 207, 154, 0.12);
+  border: 1px solid rgba(61, 207, 154, 0.35);
+  color: var(--admin-accent);
+}
+
+.user-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.user-card {
+  border: 1px solid var(--admin-line);
+  border-radius: 18px;
+  background: var(--admin-card);
+  overflow: hidden;
+  animation: rise 420ms ease both;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.user-card.pending {
+  border-color: rgba(232, 184, 109, 0.35);
+}
+
+/* Archived accounts read as inactive — dimmer than a rejected but still-present user. */
+.user-card.deleted {
+  border-color: rgba(224, 122, 106, 0.3);
+  background: linear-gradient(170deg, rgba(224, 122, 106, 0.07), transparent 40%),
+    var(--admin-card);
+}
+
+.user-card.deleted .name-line h3,
+.user-card.deleted .email {
+  text-decoration: line-through;
+  text-decoration-color: rgba(224, 122, 106, 0.5);
+}
+
+.deleted-meta {
+  margin-top: 0.1rem;
+  color: rgba(240, 194, 186, 0.8);
+}
+
+.not-restorable {
+  align-self: center;
+  max-width: 22rem;
+  line-height: 1.4;
+}
+
+.user-card.open {
+  border-color: rgba(61, 207, 154, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+}
+
+.user-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+}
+
+.user-row:hover {
+  background: rgba(61, 207, 154, 0.04);
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  background: rgba(61, 207, 154, 0.15);
+  color: var(--admin-accent);
+  border: 1px solid rgba(61, 207, 154, 0.25);
+}
+
+.avatar[data-status='pending'] {
+  background: rgba(232, 184, 109, 0.15);
+  color: var(--admin-warn);
+  border-color: rgba(232, 184, 109, 0.3);
+}
+
+.avatar[data-status='rejected'] {
+  background: rgba(224, 122, 106, 0.15);
+  color: var(--admin-danger);
+  border-color: rgba(224, 122, 106, 0.3);
+}
+
+.avatar[data-status='deleted'] {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(240, 194, 186, 0.75);
+  border-color: rgba(224, 122, 106, 0.35);
+}
+
+.name-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.name-line h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.email {
+  margin: 0.15rem 0 0;
+  color: var(--admin-muted);
+  font-size: 0.86rem;
+}
+
+.meta {
+  margin: 0.25rem 0 0;
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--admin-line);
+  color: var(--admin-muted);
+}
+
+.badge.admin {
+  border-color: rgba(61, 207, 154, 0.45);
+  color: var(--admin-accent);
+}
+
+.badge[data-status='pending'] {
+  border-color: rgba(232, 184, 109, 0.5);
+  color: var(--admin-warn);
+}
+
+.badge[data-status='approved'] {
+  border-color: rgba(61, 207, 154, 0.5);
+  color: var(--admin-accent);
+}
+
+.badge[data-status='rejected'] {
+  border-color: rgba(224, 122, 106, 0.5);
+  color: #f0c2ba;
+}
+
+.badge[data-status='deleted'] {
+  border-color: rgba(224, 122, 106, 0.6);
+  background: rgba(224, 122, 106, 0.16);
+  color: #ffd2ca;
+}
+
+.expand-ico {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--admin-line);
+  color: var(--admin-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.actions {
+  display: flex;
+  gap: 0.45rem;
+  padding: 0 1.1rem 1rem;
+  flex-wrap: wrap;
+}
+
+/* Count inside a filter chip — "Deleted 3". */
+.chip-count {
+  font-style: normal;
+  font-weight: 700;
+  margin-left: 0.15rem;
+}
+
+.sessions {
+  border-top: 1px solid var(--admin-line);
+  padding: 0.85rem 1.1rem 1.1rem;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.sessions-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.65rem;
+}
+
+.sessions-head h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-accent);
+}
+
+.session {
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  transition: border-color 90ms ease-out;
+}
+
+.session.open {
+  border-color: rgba(61, 207, 154, 0.4);
+}
+
+.session-btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0.75rem 0.85rem;
+  cursor: pointer;
+}
+
+.session-btn:hover {
+  background: rgba(61, 207, 154, 0.06);
+}
+
+.session-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.session-top strong {
+  font-size: 0.95rem;
+}
+
+.state {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--admin-muted);
+  border: 1px solid var(--admin-line);
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  white-space: nowrap;
+}
+
+.session-meta {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  font-size: 0.78rem;
+  color: var(--admin-muted);
+}
+
+.counts em {
+  font-style: normal;
+  color: var(--admin-accent);
+  font-weight: 600;
+}
+
+.when { margin-left: auto; }
+
+.artifacts {
+  border-top: 1px solid var(--admin-line);
+  padding: 0.75rem 0.85rem 0.9rem;
+  display: grid;
+  gap: 0.65rem;
+  animation: rise 280ms ease both;
+}
+
+.art-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-muted);
+}
+
+/* The SDD download row under the architecture viewer — one line, wrapping on a narrow panel. */
+.art-doc-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.name-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip-name {
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.78rem;
+  border: 1px solid var(--admin-line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.chip-name.agent {
+  border-color: rgba(61, 207, 154, 0.35);
+  color: var(--admin-accent);
+}
+
+.chip-name.skill {
+  border-color: rgba(120, 180, 255, 0.35);
+  color: #9ec4ff;
+}
+
+.chip-name.rule {
+  border-color: rgba(232, 184, 109, 0.4);
+  color: var(--admin-warn);
+}
+
+/* Same violet the owner's own session list uses for uploaded files. */
+.chip-name.doc {
+  border-color: rgba(180, 160, 255, 0.35);
+  color: #c9b8ff;
+}
+
+/* ── Which pipeline the session followed ─────────────────── */
+
+/*
+ * On the collapsed row next to the state. Colour-coded as well as worded, because an admin
+ * scanning ten workspaces reads the colour first and the word only when it matters: green for
+ * documents, blue for the interview, amber for a session that started neither.
+ */
+.pipe-badge {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  white-space: nowrap;
+  border: 1px solid var(--admin-line);
+  color: var(--admin-muted);
+}
+
+.pipe-badge[data-path='docs'] {
+  border-color: rgba(61, 207, 154, 0.45);
+  background: rgba(61, 207, 154, 0.12);
+  color: var(--admin-accent);
+}
+
+.pipe-badge[data-path='interview'] {
+  border-color: rgba(120, 180, 255, 0.4);
+  background: rgba(120, 180, 255, 0.1);
+  color: #9ec4ff;
+}
+
+.pipe-badge[data-path='none'] {
+  border-color: rgba(232, 184, 109, 0.4);
+  background: rgba(232, 184, 109, 0.08);
+  color: var(--admin-warn);
+}
+
+/* Marks a deduced path. Small and unobtrusive, but present: "probably documents" and
+ * "recorded as documents" are different claims and the panel should not conflate them. */
+.pipe-inferred {
+  font-style: normal;
+  margin-left: 0.15rem;
+  opacity: 0.75;
+}
+
+.bp-badge {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  white-space: nowrap;
+  border: 1px dashed rgba(180, 160, 255, 0.4);
+  color: #c9b8ff;
+}
+
+/* Approved blueprints are solid — the dashed border says "still moving". */
+.bp-badge.frozen {
+  border-style: solid;
+  background: rgba(180, 160, 255, 0.1);
+}
+
+/* The +/− the session row was missing. The user card has one; a session was expandable with
+ * nothing to say so, which is why the diagrams below it went unnoticed. */
+.session-ico {
+  margin-left: 0.1rem;
+  width: 1.1rem;
+  text-align: center;
+  color: var(--admin-accent);
+  font-weight: 600;
+}
+
+.session-top {
+  flex-wrap: wrap;
+}
+
+/* Pushes the badges and the +/− to the right edge, whatever the name's length. */
+.session-top strong {
+  margin-right: auto;
+}
+
+.pipe-strip {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--admin-line);
+  border-left-width: 3px;
+  background: rgba(255, 255, 255, 0.03);
+  line-height: 1.45;
+}
+
+.pipe-strip[data-path='docs'] { border-left-color: var(--admin-accent); }
+.pipe-strip[data-path='interview'] { border-left-color: #9ec4ff; }
+.pipe-strip[data-path='none'] { border-left-color: var(--admin-warn); }
+
+.pipe-strip-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-ink);
+}
+
+.pipe-note { line-height: 1.4; }
+
+/* ── The blueprint, read-only ────────────────────────────── */
+
+.bp-block {
+  border-top: 1px solid var(--admin-line);
+  padding-top: 0.7rem;
+  /* The viewer sizes itself from its container, and every ancestor here is padded — without a
+   * floor it collapses to a thumbnail on a narrow card. */
+  min-width: 0;
+}
+
+/* ── The blueprint's change history ──────────────────────
+ *
+ * Its own copy of the scope badges and revision rows rather than a shared stylesheet: the
+ * wizard's are inside an emulated-encapsulation component, so its `.scope-tag` rules never
+ * reach this template. Same vocabulary, admin palette.
+ */
+.bp-history {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.art-label.sub {
+  margin: 0 0 0.15rem;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.78rem;
+}
+
+/* Which version is on screen, when it is not the current one. */
+.bp-history-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid rgba(232, 184, 109, 0.45);
+  border-radius: 10px;
+  background: rgba(232, 184, 109, 0.1);
+}
+
+.bp-history-bar .tiny {
+  flex: 1;
+  min-width: 12rem;
+  color: var(--admin-warn);
+}
+
+.tiny-btn {
+  font-size: 0.74rem;
+  padding: 0.25rem 0.6rem;
+}
+
+/* A button, not a row: it loads that version's three PNGs into the viewer above. */
+.bp-rev {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--admin-line);
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.2);
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.bp-rev:hover:not(:disabled) {
+  border-color: rgba(61, 207, 154, 0.5);
+  background: rgba(61, 207, 154, 0.08);
+}
+
+.bp-rev.active {
+  border-color: rgba(61, 207, 154, 0.7);
+  background: rgba(61, 207, 154, 0.14);
+}
+
+.bp-rev.current {
+  border-color: rgba(232, 242, 236, 0.22);
+}
+
+.bp-rev:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.bp-rev-pill {
+  flex: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid rgba(61, 207, 154, 0.45);
+  color: var(--admin-accent);
+}
+
+.bp-rev.active .bp-rev-pill,
+.bp-rev.current .bp-rev-pill {
+  background: rgba(61, 207, 154, 0.12);
+}
+
+.bp-rev-body {
+  display: grid;
+  gap: 0.18rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.bp-rev-instruction {
+  font-size: 0.84rem;
+  color: var(--admin-ink);
+}
+
+.bp-rev-open {
+  flex: none;
+  align-self: center;
+  white-space: nowrap;
+  color: var(--admin-accent);
+}
+
+.bp-rev.current .bp-rev-open,
+.bp-rev:disabled .bp-rev-open {
+  color: var(--admin-muted);
+}
+
+/* Green: the process itself changed, so the generated agents changed with it. */
+.scope-tag {
+  justify-self: start;
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 0.1rem 0.42rem;
+  border: 1px solid rgba(61, 207, 154, 0.45);
+  background: rgba(61, 207, 154, 0.12);
+  color: var(--admin-accent);
+}
+
+/* Violet: one view re-drawn, the process untouched — the same family as `.bp-badge`. */
+.scope-tag[data-scope='view'],
+.scope-tag[data-scope='sipoc'],
+.scope-tag[data-scope='flow'],
+.scope-tag[data-scope='swimlane'] {
+  border-color: rgba(180, 160, 255, 0.5);
+  background: rgba(180, 160, 255, 0.12);
+  color: #c9b8ff;
+}
+
+.scope-tag[data-scope='first'] {
+  border-color: var(--admin-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--admin-muted);
+}
+
+/*
+ * Let the full-screen fallback out of the panel.
+ *
+ * `position: fixed` resolves against the nearest *transformed* ancestor, and three of them are
+ * animated with `both` — so their finished `transform: translateY(0)` never goes away — while
+ * two also clip with `overflow: hidden`. Native fullscreen escapes all of that on its own; this
+ * is for the browsers that refuse the request, where the viewer would otherwise be pinned
+ * inside the session row it was opened from. The `styles.css` twin does the same for `.card`.
+ */
+.user-card:has(.bp-viewer.fs),
+.sessions:has(.bp-viewer.fs),
+.session:has(.bp-viewer.fs),
+.artifacts:has(.bp-viewer.fs) {
+  animation: none;
+  transform: none;
+  overflow: visible;
+}
+
+.empty-sessions,
+.loading {
+  margin: 0.25rem 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  border: 1px dashed var(--admin-line);
+  border-radius: 18px;
+}
+
+.empty-state h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--display, Georgia, serif);
+  font-weight: 400;
+}
+
+/* ── Reject / delete confirmation ────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(4, 12, 10, 0.72);
+  backdrop-filter: blur(5px);
+  animation: fade-in 140ms ease both;
+}
+
+.confirm-modal {
+  width: min(100%, 26rem);
+  border-radius: 16px;
+  border: 1px solid rgba(240, 194, 186, 0.28);
+  background: linear-gradient(165deg, rgba(224, 122, 106, 0.12), transparent 42%), #0d1714;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  padding: 1.25rem 1.3rem 1.15rem;
+  animation: rise 180ms ease both;
+}
+
+.confirm-modal.danger-modal {
+  border-color: rgba(224, 122, 106, 0.5);
+  background: linear-gradient(165deg, rgba(224, 122, 106, 0.2), transparent 46%), #0d1714;
+}
+
+.confirm-modal h2 {
+  margin: 0 0 0.45rem;
+  font-family: var(--display, Georgia, serif);
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: #f7e4df;
+}
+
+.modal-lede {
+  margin: 0 0 0.95rem;
+  color: var(--admin-muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.modal-lede strong { color: #fff; font-weight: 600; }
+
+.modal-meta {
+  margin: 0 0 1.15rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.65rem 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.modal-meta div { min-width: 0; }
+
+.modal-meta dt {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-muted);
+}
+
+.modal-meta dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  word-break: break-word;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.muted { color: var(--admin-muted); }
+.tiny { font-size: 0.78rem; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 720px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .user-row {
+    grid-template-columns: auto 1fr;
+  }
+
+  .expand-ico {
+    display: none;
+  }
+
+  .when {
+    margin-left: 0;
+  }
+}

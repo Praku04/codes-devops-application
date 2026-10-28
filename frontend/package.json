@@ -1,0 +1,35 @@
+{
+  "name": "agentcraft-ui",
+  "version": "1.0.0",
+  "scripts": {
+    "ng": "ng",
+    "env": "node scripts/write-env.cjs",
+    "start": "npm run env && node scripts/serve.cjs",
+    "build": "npm run env && ng build",
+    "watch": "npm run env && ng build --watch --configuration development",
+    "reinstall": "node scripts/clean-install.cjs",
+    "verify:markdown": "node scripts/verify-markdown-preview.mjs"
+  },
+  "private": true,
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "dependencies": {
+    "@angular/animations": "^22.1.0",
+    "@angular/common": "^22.1.0",
+    "@angular/compiler": "^22.1.0",
+    "@angular/core": "^22.1.0",
+    "@angular/forms": "^22.1.0",
+    "@angular/platform-browser": "^22.1.0",
+    "@angular/router": "^22.1.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.6.0",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.1.0",
+    "@angular/cli": "^22.1.0",
+    "@angular/compiler-cli": "^22.1.0",
+    "typescript": "~6.0.0"
+  }
+}

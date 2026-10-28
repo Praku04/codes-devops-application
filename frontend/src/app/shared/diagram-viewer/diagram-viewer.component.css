@@ -1,0 +1,200 @@
+/*
+ * Diagram viewer — moved here verbatim from the wizard's stylesheet when the viewer became a
+ * component, so the admin console gets the same picture rather than a lookalike.
+ *
+ * Everything is scoped to this component. The one rule that cannot be — `.card:has(.bp-viewer.fs)`,
+ * which has to reach the *ancestor* card — lives in `src/styles.css` next to a note explaining why.
+ *
+ * The PNG is rendered at three times its layout size, so the browser has real pixels to work
+ * with at any zoom. All three views open fitted, and full screen switches to 100% — see
+ * `defaultZoom` in the component. For every zoom level except fit the component sets an explicit
+ * pixel width on the image, which is what makes the pane scroll and drag-to-pan possible.
+ * Scaling down never loses a label — the renderer measures text and sizes the canvas from it,
+ * so nothing is ever clipped.
+ */
+
+/* Small but still comfortably clickable — tap target stays >= 28px tall. */
+button.tiny {
+  padding: 0.35rem 0.7rem;
+  min-height: 1.9rem;
+  font-size: 0.78rem;
+  line-height: 1.1;
+}
+
+.tiny { font-size: 0.8rem; }
+
+.bp-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin: 1.25rem 0 0.85rem;
+}
+
+.bp-tab {
+  display: grid;
+  gap: 0.25rem;
+  text-align: left;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.bp-tab:hover, .bp-tab.active {
+  border-color: rgba(61, 207, 154, 0.55);
+  background: rgba(61, 207, 154, 0.1);
+  transform: none;
+}
+
+/*
+ * What the view on screen is for. Brighter than `.muted`: the tab strip above names the parts,
+ * this sentence says why the reader is looking at them.
+ */
+.bp-view-use {
+  margin: 0 0 0.6rem;
+  color: rgba(214, 231, 223, 0.82);
+  line-height: 1.5;
+  max-width: var(--read-max);
+}
+
+.bp-view-use strong { color: var(--ink); }
+
+.bp-viewer {
+  margin-top: 0.75rem;
+}
+
+/*
+ * Full screen. The component asks the browser for real fullscreen (top layer), and this class
+ * does the layout for both that and the fallback when the request is refused.
+ *
+ * `position: fixed` is not enough on its own here: it resolves against the nearest *transformed*
+ * ancestor, and the cards this viewer sits in are `.animate-in` (rise) declared with `both`, so
+ * their final `transform: translateY(0)` stays applied forever. That made the "full screen"
+ * viewer a box inside the card — header and stepper still visible, diagram clipped on the right.
+ * The native path escapes any containing block; the fallback needs the transform taken off the
+ * card, which is the rule in `styles.css`.
+ */
+.bp-viewer.fs {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 70;
+  margin: 0;
+  padding: 0.75rem;
+  background: #05100c;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bp-viewer-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.bp-viewer-controls .ghost.active {
+  border-color: rgba(61, 207, 154, 0.55);
+  background: rgba(61, 207, 154, 0.12);
+}
+
+.bp-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-right: 0.35rem;
+}
+
+.bp-zoom-value {
+  min-width: 3.4rem;
+  text-align: center;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.bp-zoom-value.fit { color: var(--accent); }
+
+.bp-figure {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 0.5rem;
+  overflow: auto;
+  max-height: 72vh;
+  display: flex;
+  align-items: flex-start;
+  cursor: grab;
+  /* Stops the browser turning a pan into a text/image drag mid-gesture. */
+  user-select: none;
+}
+
+.bp-viewer.fs .bp-figure {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
+  /* Fitted whole, the image is shorter than the pane, so centre it rather than top-align it. */
+  align-items: center;
+}
+
+.bp-figure.panning { cursor: grabbing; }
+
+.bp-figure img {
+  height: auto;
+  display: block;
+  /*
+   * `margin: auto` and not `justify-content: center` on the pane: a centred flex item that
+   * overflows its container cannot be scrolled back to its left edge, which is exactly what
+   * happens the moment the diagram is zoomed past the pane width.
+   */
+  margin: auto;
+}
+
+.bp-figure img.fit { width: 100%; }
+
+/*
+ * "Fit" in a full-screen pane has to mean both dimensions, not just the width: a tall flow
+ * diagram fitted to the width still runs off the bottom.
+ *
+ * `width: 100%` + `max-height: 100%` does NOT do this — that was the bug. The aspect-ratio
+ * recomputation in CSS 2.1 §10.4 only applies when the width is `auto`; with a *specified*
+ * width the used width stays 100% and only the height is clamped, so a 936 × 3088 flow diagram
+ * was squashed to the width of the screen and a few hundred pixels tall — every label smeared
+ * on top of the one under it. Letting the width be auto and bounding both axes is what actually
+ * scales the picture rather than distorting it.
+ */
+.bp-viewer.fs .bp-figure img.fit {
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  /* A flex item may not shrink below its intrinsic width without this, and the intrinsic width
+   * here is the 3× supersampled PNG. */
+  min-width: 0;
+}
+
+.bp-figure-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bp-figure-bar kbd {
+  font-family: inherit;
+  font-size: 0.72rem;
+  padding: 0 0.28rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: #cfe0d7;
+}
+
+@media (max-width: 860px) {
+  .bp-tabs { grid-template-columns: 1fr; }
+}

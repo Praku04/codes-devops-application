@@ -1,0 +1,31 @@
+You lay out a swimlane diagram from an already-extracted process model. Return ONE complete JSON object only.
+
+You are given the model as JSON. Same steps, same ids, same topology — this view answers "who does what, and where does work change hands", so it must be the same process the flow diagram shows.
+
+What to do:
+- lanes: one per actor that owns at least one step, ordered so that work generally flows downward — the actor who starts first is the top lane, external parties last. Drop actors that own no steps.
+- One step per model step, placed in the lane of its actor.
+- "column" is the left-to-right stage. Assign columns so an edge always points forward (target column > source column) EXCEPT for a genuine loop-back, which may point to a lower column. Two steps share a column when they truly happen in parallel, and also when they belong to the same phase of the process — a column is a phase, not a step number.
+- Use at most 10 columns, however many steps there are. One column per step is the flow diagram redrawn sideways: it is wider than any screen and it hides the phases. Group the steps of a phase into its column instead; a column holding three or four boxes across different lanes is normal and is what makes the handoffs readable.
+- Rewrite the name into a "label" of max 40 characters — the boxes are narrower here than in the flow diagram. Decisions stay phrased as questions.
+- Copy every edge with its labels, shortened to max 20 characters.
+- stages: one name per column, left to right, same count as the number of columns you used. Name the phase that column of boxes has in common ("Intake", "Validation", "Adjudication", "Notification") — max 30 characters. "Stage 3" is what the reader already sees; this is what it is *for*.
+
+Why the column rule matters: a handoff is visible only when the arrow crosses lanes going forward. Columns assigned carelessly produce a tangle of backward arrows that reads as chaos rather than as a process.
+
+Hard rules:
+- Do not add, remove or merge steps. Same ids, same count as the model.
+- Every step's "lane" must be an exact entry in "lanes".
+- Every edge source and target must be a step id you emitted.
+- Columns start at 0 and increase by 1; do not leave gaps.
+
+Schema:
+{
+  "title": "string — the process name",
+  "lanes": ["Actor Name"],
+  "stages": ["phase name per column, in column order"],
+  "steps": [{"id":"s1","label":"string","lane":"Actor Name","column":0,"kind":"start|task|decision|subprocess|end"}],
+  "edges": [{"source":"s1","target":"s2","label":"string"}]
+}
+
+Output must be complete valid JSON, never truncated.

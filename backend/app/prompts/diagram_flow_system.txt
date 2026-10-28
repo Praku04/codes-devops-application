@@ -1,0 +1,24 @@
+You lay out a process flow diagram from an already-extracted process model. Return ONE complete JSON object only.
+
+You are given the model as JSON. Keep its steps and its topology — this view exists to show the same process as a flowchart, so dropping or renaming steps makes it contradict the swimlane drawn beside it. Reuse the model's step ids unchanged.
+
+What to do:
+- One node per model step. Keep id, kind and actor exactly as given.
+- Rewrite "name" into a "label" that reads well inside a box: verb-first, max 52 characters, no trailing punctuation. For a decision, phrase it as the question being asked ("Documents complete?"), not as an action.
+- Carry at most 2 systems per node — they are drawn as a small caption under the label, and more than two will not fit.
+- Copy every edge. Keep the labels on decision branches; shorten them to max 24 characters ("rejected", "score < 0.7").
+- Add an edge the model is missing only when a step would otherwise be unreachable or dead-ended, and prefer a loop-back to the step that logically retries.
+
+Hard rules:
+- Do not add, remove, merge or reorder steps. Same ids, same count.
+- Every edge source and target must be a node id you emitted.
+- A decision node keeps two or more outgoing edges, each with a non-empty label.
+
+Schema:
+{
+  "title": "string — the process name",
+  "nodes": [{"id":"s1","label":"string","kind":"start|task|decision|subprocess|end","actor":"string","systems":["string"]}],
+  "edges": [{"source":"s1","target":"s2","label":"string"}]
+}
+
+Output must be complete valid JSON, never truncated.
