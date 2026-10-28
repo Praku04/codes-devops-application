@@ -1,0 +1,455 @@
+name: SmartTutor V4 Deployment - $(Build.SourceBranchName)
+
+trigger:
+  branches:
+    include:
+      - main
+      - uat
+      - dev
+      - cicd-setup
+
+variables:
+
+- name: imageTag
+  value: $(Build.BuildId)
+
+# --------------------------
+# DEV (cicd-setup + dev)
+# --------------------------
+- ${{ if or(eq(variables['Build.SourceBranchName'],'cicd-setup'), eq(variables['Build.SourceBranchName'],'dev')) }}:
+  - group: aws-python-dev
+  - name: awsServiceConnection
+    value: aws-oidc-dev
+  - name: appUrl
+    value: https://frontend-dev.smarttutor-new.com:489
+
+# --------------------------
+# UAT
+# --------------------------
+- ${{ if eq(variables['Build.SourceBranchName'],'uat') }}:
+  - group: aws-python-uat
+  - name: awsServiceConnection
+    value: aws-oidc-uat-prod
+  - name: appUrl
+    value: https://frontend-uat.smarttutor-new.com
+
+# --------------------------
+# PROD
+# --------------------------
+- ${{ if eq(variables['Build.SourceBranchName'],'main') }}:
+  - group: aws-python-prod
+  - name: awsServiceConnection
+    value: aws-oidc-uat-prod
+
+stages:
+- stage: Deploy
+  displayName: ECR/ECS Deploy
+
+  jobs:
+  - job: EcrEcs
+    displayName: Build Push and Deploy ECS
+
+    pool:
+      vmImage: ubuntu-latest
+
+    steps:
+
+    - checkout: self
+
+    # ---------------------------------------
+    # Display Environment
+    # ---------------------------------------
+    - script: |
+        echo "=================================="
+        echo "Branch              : $(Build.SourceBranchName)"
+        echo "AWS Region          : $(awsRegion)"
+        echo "ECR Repository      : $(ecrRepository)"
+        echo "ECS Cluster         : $(ecsCluster)"
+        echo "ECS Service         : $(ecsService)"
+        echo "=================================="
+      displayName: Display Environment Variables
+
+    # ---------------------------------------
+    # Build Docker Image
+    # ---------------------------------------
+    - script: |
+        echo "Building Docker image..."
+
+        docker build \
+          -t $(ecrRepository):$(imageTag) \
+          -t $(ecrRepository):latest \
+          .
+
+        docker images | grep $(ecrRepository)
+      displayName: Build Docker Image
+
+
+    # ---------------------------------------
+    # Push Docker Image
+    # ---------------------------------------
+    # Versioned tag
+    - task: ECRPushImage@1
+      displayName: Push Versioned Image
+      inputs:
+        awsCredentials: $(awsServiceConnection)
+        regionName: $(awsRegion)
+        imageSource: imagename
+        sourceImageName: $(ecrRepository)
+        sourceImageTag: $(imageTag)
+        repositoryName: $(ecrRepository)
+        pushTag: $(imageTag)
+
+    # Latest tag (optional)
+    - task: ECRPushImage@1
+      displayName: Push Latest Image
+      inputs:
+        awsCredentials: $(awsServiceConnection)
+        regionName: $(awsRegion)
+        imageSource: imagename
+        sourceImageName: $(ecrRepository)
+        sourceImageTag: latest
+        repositoryName: $(ecrRepository)
+        pushTag: latest
+
+
+
+    - task: AWSShellScript@1
+      displayName: Create New Task Definition Revision
+      env:
+        ECS_CLUSTER: $(ecsCluster)
+        ECS_SERVICE: $(ecsService)
+        ECR_REPOSITORY: $(ecrRepository)
+        IMAGE_TAG: $(imageTag)
+      inputs:
+        awsCredentials: $(awsServiceConnection)
+        regionName: $(awsRegion)
+        scriptType: inline
+        inlineScript: |
+          set -euo pipefail
+
+          ACCOUNT_ID=$(aws sts get-caller-identity \
+            --query Account \
+            --output text)
+
+          IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.$(awsRegion).amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}"
+
+          echo "Using image:"
+          echo "$IMAGE_URI"
+
+          CURRENT_TASK_DEF=$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --query 'services[0].taskDefinition' \
+            --output text)
+
+          echo "Current task definition:"
+          echo "$CURRENT_TASK_DEF"
+
+          aws ecs describe-task-definition \
+            --task-definition "$CURRENT_TASK_DEF" \
+            --query 'taskDefinition' \
+            > taskdef.json
+
+          command -v jq >/dev/null || {
+            sudo apt-get update
+            sudo apt-get install -y jq
+          }
+
+          jq --arg IMAGE "$IMAGE_URI" '
+            del(
+              .taskDefinitionArn,
+              .revision,
+              .status,
+              .registeredAt,
+              .registeredBy,
+              .requiresAttributes,
+              .compatibilities
+            )
+            | (.containerDefinitions[0].image)=$IMAGE
+          ' taskdef.json > taskdef-new.json
+
+          NEW_TASK_DEF=$(aws ecs register-task-definition \
+            --cli-input-json file://taskdef-new.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "New task definition:"
+          echo "$NEW_TASK_DEF"
+
+          echo "##vso[task.setvariable variable=newTaskDefinition]$NEW_TASK_DEF"
+          
+    # ---------------------------------------
+    # Trigger ECS Deployment
+    # ---------------------------------------
+    # Records the id of the deployment this run created, so the monitor can tell it apart
+    # from a circuit-breaker rollback (see below).
+    - task: AWSShellScript@1
+      displayName: Trigger ECS Deployment
+      env:
+        ECS_CLUSTER: $(ecsCluster)
+        ECS_SERVICE: $(ecsService)
+        TASK_DEFINITION: $(newTaskDefinition)
+      inputs:
+        awsCredentials: $(awsServiceConnection)
+        regionName: $(awsRegion)
+        scriptType: inline
+        inlineScript: |
+          set -euo pipefail
+
+          DEPLOYMENT_ID=$(aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --task-definition "$TASK_DEFINITION" \
+            --query 'service.deployments[?status==`PRIMARY`].id | [0]' \
+            --output text)
+
+          echo "Deployment ID: $DEPLOYMENT_ID"
+
+          echo "##vso[task.setvariable variable=ecsDeploymentId]$DEPLOYMENT_ID"
+
+    # ---------------------------------------
+    # Monitor ECS Deployment
+    # ---------------------------------------
+    # Succeeds only when the deployment created above is PRIMARY and COMPLETED.
+    # "services-stable" is not enough: after a circuit-breaker rollback ECS starts a NEW
+    # deployment of the previous revision, which becomes PRIMARY and COMPLETED, and the
+    # service is stable again - while the new image never served. The task definition ARN
+    # cannot tell them apart either: :latest is redeployed under the same ARN.
+    - task: AWSShellScript@1
+      displayName: Monitor ECS Deployment
+      env:
+        ECS_CLUSTER: $(ecsCluster)
+        ECS_SERVICE: $(ecsService)
+        ECS_DEPLOYMENT_ID: $(ecsDeploymentId)
+        ECR_REPOSITORY: $(ecrRepository)
+      inputs:
+        awsCredentials: $(awsServiceConnection)
+        regionName: $(awsRegion)
+        scriptType: inline
+        inlineScript: |
+          set +e
+
+          CLUSTER="$ECS_CLUSTER"
+          SERVICE="$ECS_SERVICE"
+          DEPLOYMENT_ID="$ECS_DEPLOYMENT_ID"
+
+          # Room for the circuit breaker to fail a few tasks and roll back, so a bad deploy
+          # ends as a red run with its reason rather than a timeout.
+          MAX_WAIT_SECONDS=2100
+          POLL_SECONDS=15
+          MAX_API_ERRORS=8
+
+          echo ""
+          echo "==========================================="
+          echo "Starting ECS deployment monitoring..."
+          echo "Cluster    : $CLUSTER"
+          echo "Service    : $SERVICE"
+          echo "Deployment : $DEPLOYMENT_ID"
+          echo "==========================================="
+
+          case "$DEPLOYMENT_ID" in
+            ecs-svc/*) ;;
+            *)
+              echo "##vso[task.logissue type=error]No deployment id from the trigger step: '$DEPLOYMENT_ID'."
+              exit 1
+              ;;
+          esac
+
+          show_details() {
+            echo ""
+            echo "Deployments"
+            aws ecs describe-services \
+              --cluster "$CLUSTER" \
+              --services "$SERVICE" \
+              --query 'services[0].deployments[*].{
+                  Id:id,
+                  Status:status,
+                  Rollout:rolloutState,
+                  Reason:rolloutStateReason,
+                  Running:runningCount,
+                  Desired:desiredCount,
+                  Pending:pendingCount,
+                  Failed:failedTasks
+              }' \
+              --output table
+
+            echo ""
+            echo "Latest Service Events"
+            aws ecs describe-services \
+              --cluster "$CLUSTER" \
+              --services "$SERVICE" \
+              --query 'services[0].events[0:15].[createdAt,message]' \
+              --output table
+          }
+
+          show_stopped_tasks() {
+            STOPPED=$(aws ecs list-tasks \
+              --cluster "$CLUSTER" \
+              --service-name "$SERVICE" \
+              --desired-status STOPPED \
+              --query 'taskArns[0:5]' \
+              --output text | grep -v '^None$')
+
+            if [ -n "$STOPPED" ]; then
+              echo ""
+              echo "Recently stopped tasks (exit code 3 = the app refused to start; see its log)"
+              aws ecs describe-tasks \
+                --cluster "$CLUSTER" \
+                --tasks $STOPPED \
+                --query 'tasks[*].{
+                    StoppedAt:stoppedAt,
+                    Reason:stoppedReason,
+                    ExitCode:containers[0].exitCode,
+                    Container:containers[0].reason
+                }' \
+                --output table
+            fi
+          }
+
+          # A deployment can complete on an image this run did not push: the task definition
+          # may name another repository or tag. Then ECS "succeeds" while serving old code.
+          verify_running_image() {
+            PUSHED_DIGEST=$(aws ecr describe-images \
+              --repository-name "$ECR_REPOSITORY" \
+              --image-ids imageTag=$(Build.BuildId) \
+              --query 'imageDetails[0].imageDigest' \
+              --output text)
+
+            TASK_DEF=$(aws ecs describe-services \
+              --cluster "$CLUSTER" \
+              --services "$SERVICE" \
+              --query "services[0].deployments[?id=='${DEPLOYMENT_ID}'] | [0].taskDefinition" \
+              --output text)
+
+            echo ""
+            echo "Image pushed by this run : $ECR_REPOSITORY:$(Build.BuildId) ($PUSHED_DIGEST)"
+            echo "Task definition          : $TASK_DEF"
+            echo "Images it runs:"
+            aws ecs describe-task-definition \
+              --task-definition "$TASK_DEF" \
+              --query 'taskDefinition.containerDefinitions[*].[name,image]' \
+              --output text
+
+            case "$PUSHED_DIGEST" in
+              sha256:*) ;;
+              *)
+                echo "##vso[task.logissue type=warning]Could not read the pushed image digest; image check skipped."
+                return 0
+                ;;
+            esac
+
+            # list-tasks accepts --started-by only as its sole filter, so list the service's
+            # running tasks and keep this deployment's tasks in the describe-tasks query.
+            # Only a digest that was read and does not match fails the run; a lookup that
+            # fails is reported and skipped, so it can never turn a good deploy red.
+            SERVICE_TASKS=$(aws ecs list-tasks \
+              --cluster "$CLUSTER" \
+              --service-name "$SERVICE" \
+              --desired-status RUNNING \
+              --query 'taskArns' \
+              --output text)
+            if [ $? -ne 0 ]; then
+              echo "##vso[task.logissue type=warning]Could not list the service's tasks; image check skipped."
+              return 0
+            fi
+            SERVICE_TASKS=$(printf '%s\n' "$SERVICE_TASKS" | grep -v '^None$')
+            if [ -z "$SERVICE_TASKS" ]; then
+              echo "##vso[task.logissue type=warning]The service has no running tasks; image check skipped."
+              return 0
+            fi
+
+            RUNNING_DIGESTS=$(aws ecs describe-tasks \
+              --cluster "$CLUSTER" \
+              --tasks $SERVICE_TASKS \
+              --query 'tasks[].containers[].imageDigest' \
+              --output text)
+            if [ $? -ne 0 ]; then
+              echo "##vso[task.logissue type=warning]Could not describe the service's tasks; image check skipped."
+              return 0
+            fi
+            RUNNING_DIGESTS=$(printf '%s\n' "$RUNNING_DIGESTS" | tr '\t' '\n' | grep -v -e '^None$' -e '^$' | sort -u)
+            if [ -z "$RUNNING_DIGESTS" ]; then
+              echo "##vso[task.logissue type=warning]No running task reports deployment $DEPLOYMENT_ID; image check skipped."
+              return 0
+            fi
+
+            echo "Digests the new tasks run:"
+            echo "$RUNNING_DIGESTS"
+
+            if ! printf '%s\n' "$RUNNING_DIGESTS" | grep -qxF "$PUSHED_DIGEST"; then
+              fail "The service completed a deployment, but its tasks do not run the image this run pushed ($ECR_REPOSITORY:$(Build.BuildId))."
+            fi
+            echo "The new tasks run the image this run pushed."
+          }
+
+          fail() {
+            echo ""
+            echo "==========================================="
+            echo "ERROR: $1"
+            echo "==========================================="
+            echo "##vso[task.logissue type=error]$1"
+            show_details
+            show_stopped_tasks
+            exit 1
+          }
+
+          START=$(date +%s)
+          API_ERRORS=0
+          CHECK=1
+
+          while true
+          do
+            ELAPSED=$(( $(date +%s) - START ))
+
+            STATE=$(aws ecs describe-services \
+              --cluster "$CLUSTER" \
+              --services "$SERVICE" \
+              --query "services[0].deployments[?id=='${DEPLOYMENT_ID}'] | [0].[status, rolloutState, runningCount, desiredCount, failedTasks]" \
+              --output text)
+            RC=$?
+
+            if [ $RC -ne 0 ]; then
+              API_ERRORS=$((API_ERRORS+1))
+              echo "describe-services failed (rc=$RC), $API_ERRORS of $MAX_API_ERRORS allowed"
+              if [ $API_ERRORS -ge $MAX_API_ERRORS ]; then
+                fail "Could not read the ECS service state."
+              fi
+            else
+              API_ERRORS=0
+              read -r DEP_STATUS ROLLOUT RUNNING DESIRED FAILED <<< "$STATE"
+              echo "#$CHECK (${ELAPSED}s) status=$DEP_STATUS rollout=$ROLLOUT running=$RUNNING/$DESIRED failedTasks=$FAILED"
+
+              if [ -z "$DEP_STATUS" ] || [ "$DEP_STATUS" = "None" ]; then
+                fail "Deployment $DEPLOYMENT_ID is gone from the service: ECS rolled it back, so the new image is NOT serving."
+              fi
+              if [ "$DEP_STATUS" != "PRIMARY" ]; then
+                fail "Deployment $DEPLOYMENT_ID is no longer PRIMARY ($DEP_STATUS): it was rolled back or replaced, so the new image is NOT serving."
+              fi
+              if [ "$ROLLOUT" = "FAILED" ]; then
+                fail "Deployment $DEPLOYMENT_ID FAILED (circuit breaker); ECS is rolling back to the previous version."
+              fi
+              if [ "$ROLLOUT" = "COMPLETED" ]; then
+                verify_running_image
+                echo ""
+                echo "==========================================="
+                echo "SUCCESS: deployment $DEPLOYMENT_ID COMPLETED"
+                echo "and is serving ($RUNNING/$DESIRED tasks)."
+                echo "==========================================="
+                show_details
+                exit 0
+              fi
+
+              if [ $((CHECK % 8)) -eq 1 ]; then
+                show_details
+              fi
+            fi
+
+            if [ $ELAPSED -ge $MAX_WAIT_SECONDS ]; then
+              fail "Deployment $DEPLOYMENT_ID did not complete within ${MAX_WAIT_SECONDS}s."
+            fi
+
+            CHECK=$((CHECK+1))
+            sleep $POLL_SECONDS
+          done
+
+    # ---------------------------------------

@@ -1,0 +1,100 @@
+# Smart Tutor AI — Python dependencies
+# Install:  pip install -r requirements.txt
+#
+# System tools (not installed by pip):
+#   - ffmpeg          — video compression (utils/video_analysis/processing.py)
+#   - PostgreSQL      — username, password, DB_HOST (+ optional DB_PORT, DB_NAME) in env
+#
+# Optional (Windows only, legacy Office/PPT conversion):
+#   pip install comtypes
+
+# --- Web framework (starlette 1.3.1 fixes CVE-2026-54283 / CVE-2026-54282) ---
+fastapi==0.136.3
+starlette==1.3.1
+uvicorn[standard]==0.46.0
+python-multipart==0.0.32
+Jinja2==3.1.6
+slowapi==0.1.9
+
+# --- For SSO ---
+requests
+
+# --- Auth, security, configuration ---
+python-dotenv==1.2.2
+PyJWT[crypto]==2.15.1
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+email-validator==2.2.0
+cryptography==50.0.0
+
+# --- Database (PostgreSQL via SQLAlchemy) ---
+SQLAlchemy==2.0.40
+psycopg2-binary==2.9.10
+# Versioned schema migrations (core/migrations). Mako is Alembic's revision-template engine,
+# pinned so the dependency scan sees the version that ships rather than whatever resolves.
+alembic==1.20.0
+Mako==1.4.3
+
+# --- Spreadsheets (bulk user creation template) ---
+# openpyxl builds the template with Role/Process dropdowns and reads the uploaded workbook.
+# defusedxml is pinned explicitly: openpyxl uses it automatically when installed, which is what
+# stops a crafted .xlsx from expanding external XML entities (XXE) during the upload parse.
+openpyxl==3.1.5
+defusedxml==0.7.1
+
+# --- Timezone data (required on Windows for zoneinfo Asia/Kolkata) ---
+tzdata==2025.2
+
+# --- Validation & HTTP utilities ---
+pydantic==2.12.5
+werkzeug==3.1.9
+
+# --- AWS, Bedrock, agents, vector store ---
+boto3==1.43.24
+botocore==1.43.24
+agno==2.6.12
+langchain-aws==1.5.0
+langchain-pinecone==0.2.13
+langchain-core==1.4.1
+langchain-openai==1.2.2
+
+# --- NLP & machine learning ---
+# nltk was REMOVED here, not upgraded. It produced twelve advisories in one dependency scan
+# and CVE-2026-81726 has no fixed version in any release, so no pin could clear the scan.
+# The app only ever called sent_tokenize and word_tokenize; utils/text_tokenize.py now does
+# both with the standard library, and scripts/check_text_tokenize.py holds the equivalence
+# evidence (word counts within ~1% of NLTK's, so chunk sizes are unchanged). Do not add it
+# back to pull in a tokenizer.
+numpy==2.2.4
+scikit-learn==1.6.1
+
+# --- Document processing (PDF, DOCX, PPTX) ---
+PyMuPDF==1.25.5
+# 6.21.2 clears Advanced Security alerts on 6.19.0 (CVE-2026-115572, CVE-2026-115585,
+# CVE-2026-113786 .. CVE-2026-113795: crafted PDFs causing long runtimes / large memory
+# use via PdfReader in utils/pdf_processor.py and utils/voice_training/document_parser.py).
+pypdf==6.21.2
+python-docx==1.2.0
+python-pptx==1.0.2
+reportlab==4.4.1
+
+# --- Image & video processing ---
+opencv-python-headless==4.10.0.84
+# 13.0.0 clears Advanced Security Critical/High/Medium alerts on 12.3.0
+# (CVE-2026-112900 Ghostscript argument injection / RCE, JPEG/TIFF/PDF/GIF DoS and
+# buffer overflows, and related GHSA advisories). Requires Python >= 3.11 (Dockerfile: 3.12).
+Pillow==13.0.0
+ImageHash==4.3.2
+
+# --- Audio (speech recognition / tutor) ---
+SpeechRecognition==3.14.3
+pydub==0.25.1
+amazon-transcribe==0.6.2
+
+# --- Test runner (pinned for CVE-2025-71176; pulled transitively by langchain tooling) ---
+pytest==9.0.3
+
+# --- SSL Certificate ---
+pip-system-certs
+certifi
+truststore

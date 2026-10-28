@@ -1,0 +1,135 @@
+trigger:
+- uat
+
+pool:
+  name: Sonarqube
+
+variables:
+- group: aws-sonarqube-python
+
+# ✅ Debug
+- name: system.debug
+  value: true
+
+steps:
+
+# ✅ Checkout
+- checkout: self
+  fetchDepth: 0
+  displayName: "Checkout Source Code"
+
+# ✅ Detect Branch
+- script: |
+    echo "Branch: $(Build.SourceBranchName)"
+    echo "##vso[task.setvariable variable=branchName]$(Build.SourceBranchName)"
+  displayName: "Detect Branch"
+
+# ✅ Debug Variables
+- script: |
+    echo "===== DEBUG VARIABLES ====="
+    echo "Branch=$(branchName)"
+    echo "SONAR_PROJECT_KEY=$(SONAR_PROJECT_KEY)"
+    echo "SONAR_PROJECT_NAME=$(SONAR_PROJECT_NAME)"
+    echo "SONAR_PYTHON_VERSION=$(SONAR_PYTHON_VERSION)"
+    echo "SONAR_EXCLUSIONS=$(SONAR_EXCLUSIONS)"
+    echo "NODE_VERSION=$(NODE_VERSION)"
+    echo "ANGULAR_VERSION=$(ANGULAR_VERSION)"
+  displayName: "Debug Variables"
+
+# ✅ Detect Project Type
+- script: |
+    if [ -f "requirements.txt" ]; then
+      echo "##vso[task.setvariable variable=isPython]true"
+    fi
+
+    if [ -f "package.json" ]; then
+      echo "##vso[task.setvariable variable=isNode]true"
+    fi
+  displayName: "Detect Project Type"
+
+# ✅ Java Setup
+- script: |
+    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    export PATH=$JAVA_HOME/bin:$PATH
+    java -version
+  displayName: "Java Setup"
+
+# ✅ Node Setup
+- script: |
+    echo "===== NODE SETUP ====="
+    curl -fsSL https://deb.nodesource.com/setup_$(NODE_VERSION).x | sudo -E bash -
+    sudo apt install -y nodejs
+
+    node -v
+    npm -v
+
+    echo "Installing Angular $(ANGULAR_VERSION)"
+    sudo npm install -g @angular/cli@$(ANGULAR_VERSION)
+  condition: eq(variables['isNode'], 'true')
+  displayName: "Node Setup"
+
+# ✅ Python Coverage
+- script: |
+    /usr/local/bin/python3.11 -m venv venv
+    source venv/bin/activate
+
+    pip install pytest pytest-cov
+    pytest --cov=. --cov-report=xml || true
+
+    ls -la coverage.xml || echo "No Python coverage"
+  condition: eq(variables['isPython'], 'true')
+  displayName: "Python Coverage"
+
+# ✅ Node Coverage
+- script: |
+    npm install || true
+    npm test -- --coverage || true
+
+    ls -la coverage/lcov.info || echo "No lcov"
+  condition: eq(variables['isNode'], 'true')
+  displayName: "Node Coverage"
+
+# ✅ Final Variable Check
+- script: |
+    echo "===== FINAL VARIABLE CHECK ====="
+    echo "ProjectKey=$(SONAR_PROJECT_KEY)"
+    echo "ProjectName=$(SONAR_PROJECT_NAME)"
+    echo "PythonVersion=$(SONAR_PYTHON_VERSION)"
+    echo "Exclusions=$(SONAR_EXCLUSIONS)"
+  displayName: "Final Variable Check"
+
+# ✅ Sonar Prepare (✅ FULL FIX)
+- task: SonarQubePrepare@8
+  displayName: "Prepare SonarQube Analysis"
+  inputs:
+    SonarQube: 'SonarQubeMobiquity'
+    scannerMode: 'CLI'
+    configMode: 'manual'
+    cliProjectKey: $(SONAR_PROJECT_KEY)
+    cliProjectName: $(SONAR_PROJECT_NAME)
+    cliSources: '.'
+    extraProperties: |
+      sonar.verbose=true
+      sonar.scanner.javaExePath=/usr/lib/jvm/java-17-openjdk-amd64/bin/java
+      sonar.scanner.jvmOpts=-Xss8m
+      sonar.python.version=$(SONAR_PYTHON_VERSION)
+      sonar.exclusions=$(SONAR_EXCLUSIONS)
+      sonar.python.coverage.reportPaths=coverage.xml
+      sonar.javascript.lcov.reportPaths=coverage/lcov.info
+      sonar.branch.name=$(branchName)
+
+# ✅ Run Analysis
+- task: SonarQubeAnalyze@8
+  displayName: "Run SonarQube Analysis"
+
+# ✅ Publish Quality Gate
+- task: SonarQubePublish@8
+  displayName: "Publish Quality Gate"
+  inputs:
+    pollingTimeoutSec: '300'
+
+# ✅ Dashboard
+- script: |
+    echo "===== SONAR DASHBOARD ====="
+    echo "$(SONAR_HOST_URL)/dashboard?id=$(SONAR_PROJECT_KEY)&branch=$(branchName)"
+  displayName: "Sonar Dashboard"

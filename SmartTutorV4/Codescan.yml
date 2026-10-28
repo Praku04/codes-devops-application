@@ -1,0 +1,22 @@
+name: Advanced Security Code Scanning
+
+trigger:
+  branches:
+    exclude:
+      - dev
+      - uat
+      - main
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: AdvancedSecurity-Codeql-Init@1
+  inputs:
+    languages: "python"
+    configFile: ".github/codeql/codeql-config.yml"
+
+#- task: AdvancedSecurity-Codeql-Autobuild@1
+- task: AdvancedSecurity-Dependency-Scanning@1
+- task: AdvancedSecurity-Publish@1
+- task: AdvancedSecurity-Codeql-Analyze@1
+  continueOnError: false

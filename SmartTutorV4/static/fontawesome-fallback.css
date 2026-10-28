@@ -1,0 +1,253 @@
+/* Font Awesome Fallback CSS - Comprehensive Icon Set */
+.fas, .far, .fab, .fal, .fad, .fa {
+    font-family: Arial, sans-serif;
+    font-style: normal;
+    font-weight: normal;
+    display: inline-block;
+    text-decoration: inherit;
+    line-height: 1;
+    font-size: inherit;
+}
+
+/* Common icons with Unicode fallbacks */
+.fa-user::before, .fas.fa-user::before { content: "👤"; }
+.fa-brain::before, .fas.fa-brain::before { content: "🧠"; }
+.fa-book::before, .fas.fa-book::before { content: "📚"; }
+.fa-book-open::before, .fas.fa-book-open::before { content: "📖"; }
+.fa-check-circle::before, .fas.fa-check-circle::before { content: "✅"; }
+.fa-times-circle::before, .fas.fa-times-circle::before { content: "❌"; }
+.fa-play-circle::before, .fas.fa-play-circle::before { content: "▶️"; }
+.fa-lock::before, .fas.fa-lock::before { content: "🔒"; }
+.fa-clipboard-check::before, .fas.fa-clipboard-check::before { content: "📋"; }
+.fa-chart-bar::before, .fas.fa-chart-bar::before { content: "📊"; }
+.fa-trophy::before, .fas.fa-trophy::before { content: "🏆"; }
+.fa-graduation-cap::before, .fas.fa-graduation-cap::before { content: "🎓"; }
+.fa-tasks::before, .fas.fa-tasks::before { content: "📝"; }
+.fa-redo::before, .fas.fa-redo::before { content: "🔄"; }
+.fa-exclamation-triangle::before, .fas.fa-exclamation-triangle::before { content: "⚠️"; }
+.fa-times::before, .fas.fa-times::before { content: "✖"; }
+.fa-plus::before, .fas.fa-plus::before { content: "+"; }
+.fa-edit::before, .fas.fa-edit::before { content: "✏️"; }
+.fa-trash::before, .fas.fa-trash::before { content: "🗑️"; }
+.fa-download::before, .fas.fa-download::before { content: "⬇️"; }
+.fa-upload::before, .fas.fa-upload::before { content: "⬆️"; }
+.fa-search::before, .fas.fa-search::before { content: "🔍"; }
+.fa-cog::before, .fas.fa-cog::before { content: "⚙️"; }
+.fa-user-graduate::before, .fas.fa-user-graduate::before { content: "👨‍🎓"; }
+.fa-chalkboard-teacher::before, .fas.fa-chalkboard-teacher::before { content: "👨‍🏫"; }
+.fa-globe::before, .fas.fa-globe::before { content: "🌐"; }
+.fa-list::before, .fas.fa-list::before { content: "📋"; }
+.fa-bullseye::before, .fas.fa-bullseye::before { content: "🎯"; }
+.fa-calendar::before, .fas.fa-calendar::before { content: "📅"; }
+.fa-clock::before, .fas.fa-clock::before { content: "🕐"; }
+.fa-hand-paper::before, .fas.fa-hand-paper::before { content: "✋"; }
+.fa-percentage::before, .fas.fa-percentage::before { content: "%"; }
+.fa-lightbulb::before, .fas.fa-lightbulb::before { content: "💡"; }
+.fa-arrow-right::before, .fas.fa-arrow-right::before { content: "→"; }
+.fa-info-circle::before, .fas.fa-info-circle::before { content: "ℹ️"; }
+.fa-home::before, .fas.fa-home::before { content: "🏠"; }
+.fa-play::before, .fas.fa-play::before { content: "▶"; }
+.fa-pause::before, .fas.fa-pause::before { content: "⏸"; }
+.fa-database::before, .fas.fa-database::before { content: "💾"; }
+.fa-question-circle::before, .fas.fa-question-circle::before { content: "❓"; }
+.fa-hourglass-half::before, .fas.fa-hourglass-half::before { content: "⏳"; }
+.fa-ban::before, .fas.fa-ban::before { content: "🚫"; }
+.fa-spinner::before, .fas.fa-spinner::before { content: "⏳"; }
+.fa-users::before, .fas.fa-users::before { content: "👥"; }
+.fa-layer-group::before, .fas.fa-layer-group::before { content: "📚"; }
+.fa-question-circle::before, .fas.fa-question-circle::before { content: "❓"; }
+.fa-circle::before, .fas.fa-circle::before { content: "●"; }
+.fa-check::before, .fas.fa-check::before { content: "✓"; }
+.fa-spinner::before, .fas.fa-spinner::before { content: "⟳"; }
+.fa-crown::before, .fas.fa-crown::before { content: "👑"; }
+.fa-headset::before, .fas.fa-headset::before { content: "🎧"; }
+.fa-sync-alt::before, .fas.fa-sync-alt::before { content: "🔄"; }
+.fa-file-alt::before, .fas.fa-file-alt::before { content: "📄"; }
+.fa-forward::before, .fas.fa-forward::before { content: "⏩"; }
+.fa-bell::before, .fas.fa-bell::before { content: "🔔"; }
+.fa-envelope::before, .fas.fa-envelope::before { content: "✉️"; }
+
+/* Spinner animation for loading states */
+.fa-spinner {
+    animation: fa-spin 2s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.fa-stop::before, .fas.fa-stop::before { content: "⏹"; }
+.fa-forward::before, .fas.fa-forward::before { content: "⏭"; }
+.fa-backward::before, .fas.fa-backward::before { content: "⏮"; }
+.fa-volume-up::before, .fas.fa-volume-up::before { content: "🔊"; }
+.fa-volume-down::before, .fas.fa-volume-down::before { content: "🔉"; }
+.fa-volume-mute::before, .fas.fa-volume-mute::before { content: "🔇"; }
+.fa-microphone::before, .fas.fa-microphone::before { content: "🎤"; }
+.fa-headphones::before, .fas.fa-headphones::before { content: "🎧"; }
+.fa-comments::before, .fas.fa-comments::before { content: "💬"; }
+.fa-comment::before, .fas.fa-comment::before { content: "💬"; }
+.fa-envelope::before, .fas.fa-envelope::before { content: "✉️"; }
+.fa-phone::before, .fas.fa-phone::before { content: "📞"; }
+.fa-mobile::before, .fas.fa-mobile::before { content: "📱"; }
+.fa-wifi::before, .fas.fa-wifi::before { content: "📶"; }
+.fa-signal::before, .fas.fa-signal::before { content: "📶"; }
+.fa-battery-full::before, .fas.fa-battery-full::before { content: "🔋"; }
+.fa-power-off::before, .fas.fa-power-off::before { content: "⏻"; }
+.fa-save::before, .fas.fa-save::before { content: "💾"; }
+.fa-print::before, .fas.fa-print::before { content: "🖨️"; }
+.fa-copy::before, .fas.fa-copy::before { content: "📄"; }
+.fa-cut::before, .fas.fa-cut::before { content: "✂️"; }
+.fa-paste::before, .fas.fa-paste::before { content: "📋"; }
+.fa-undo::before, .fas.fa-undo::before { content: "↶"; }
+.fa-share::before, .fas.fa-share::before { content: "📤"; }
+.fa-link::before, .fas.fa-link::before { content: "🔗"; }
+.fa-star::before, .fas.fa-star::before { content: "⭐"; }
+.fa-heart::before, .fas.fa-heart::before { content: "❤️"; }
+.fa-thumbs-up::before, .fas.fa-thumbs-up::before { content: "👍"; }
+.fa-thumbs-down::before, .fas.fa-thumbs-down::before { content: "👎"; }
+.fa-eye::before, .fas.fa-eye::before { content: "👁️"; }
+.fa-eye-slash::before, .fas.fa-eye-slash::before { content: "🙈"; }
+.fa-warning::before, .fas.fa-warning::before { content: "⚠️"; }
+.fa-error::before, .fas.fa-error::before { content: "❌"; }
+.fa-success::before, .fas.fa-success::before { content: "✅"; }
+.fa-info::before, .fas.fa-info::before { content: "ℹ️"; }
+
+/* Login and authentication icons */
+.fa-sign-in-alt::before, .fas.fa-sign-in-alt::before { content: "🔑"; }
+.fa-sign-out-alt::before, .fas.fa-sign-out-alt::before { content: "🚪"; }
+.fa-key::before, .fas.fa-key::before { content: "🔑"; }
+.fa-lock-open::before, .fas.fa-lock-open::before { content: "🔓"; }
+.fa-shield-alt::before, .fas.fa-shield-alt::before { content: "🛡️"; }
+
+/* Navigation icons */
+.fa-bars::before, .fas.fa-bars::before { content: "☰"; }
+.fa-ellipsis-v::before, .fas.fa-ellipsis-v::before { content: "⋮"; }
+.fa-ellipsis-h::before, .fas.fa-ellipsis-h::before { content: "⋯"; }
+.fa-chevron-up::before, .fas.fa-chevron-up::before { content: "▲"; }
+.fa-chevron-down::before, .fas.fa-chevron-down::before { content: "▼"; }
+.fa-chevron-left::before, .fas.fa-chevron-left::before { content: "◀"; }
+.fa-chevron-right::before, .fas.fa-chevron-right::before { content: "▶"; }
+.fa-arrow-up::before, .fas.fa-arrow-up::before { content: "↑"; }
+.fa-arrow-down::before, .fas.fa-arrow-down::before { content: "↓"; }
+.fa-arrow-left::before, .fas.fa-arrow-left::before { content: "←"; }
+
+/* File and folder icons */
+.fa-file::before, .fas.fa-file::before { content: "📄"; }
+.fa-file-alt::before, .fas.fa-file-alt::before { content: "📝"; }
+.fa-folder::before, .fas.fa-folder::before { content: "📁"; }
+.fa-folder-open::before, .fas.fa-folder-open::before { content: "📂"; }
+.fa-image::before, .fas.fa-image::before { content: "🖼️"; }
+.fa-video::before, .fas.fa-video::before { content: "🎥"; }
+.fa-music::before, .fas.fa-music::before { content: "🎵"; }
+
+/* Status and notification icons */
+.fa-bell::before, .fas.fa-bell::before { content: "🔔"; }
+.fa-bell-slash::before, .fas.fa-bell-slash::before { content: "🔕"; }
+.fa-flag::before, .fas.fa-flag::before { content: "🚩"; }
+.fa-bookmark::before, .fas.fa-bookmark::before { content: "🔖"; }
+.fa-tag::before, .fas.fa-tag::before { content: "🏷️"; }
+
+/* Ensure proper spacing and alignment */
+.fas::before, .far::before, .fab::before, .fal::before, .fad::before, .fa::before {
+    display: inline-block;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+}
+/* Additional common icons */
+.fa-home::before, .fas.fa-home::before { content: "🏠"; }
+.fa-share::before, .fas.fa-share::before { content: "📤"; }
+.fa-users::before, .fas.fa-users::before { content: "👥"; }
+.fa-cog::before, .fas.fa-cog::before, .fa-gear::before, .fas.fa-gear::before { content: "⚙️"; }
+.fa-file-alt::before, .fas.fa-file-alt::before { content: "📄"; }
+.fa-graduation-cap::before, .fas.fa-graduation-cap::before { content: "🎓"; }
+.fa-eye::before, .fas.fa-eye::before { content: "👁️"; }
+.fa-trash::before, .fas.fa-trash::before, .fa-trash-alt::before, .fas.fa-trash-alt::before { content: "🗑️"; }
+.fa-edit::before, .fas.fa-edit::before { content: "✏️"; }
+.fa-plus::before, .fas.fa-plus::before { content: "+"; }
+.fa-minus::before, .fas.fa-minus::before { content: "-"; }
+.fa-times::before, .fas.fa-times::before { content: "×"; }
+.fa-check::before, .fas.fa-check::before { content: "✓"; }
+.fa-chevron-right::before, .fas.fa-chevron-right::before { content: "▶"; }
+.fa-chevron-down::before, .fas.fa-chevron-down::before { content: "▼"; }
+.fa-chevron-left::before, .fas.fa-chevron-left::before { content: "◀"; }
+.fa-chevron-up::before, .fas.fa-chevron-up::before { content: "▲"; }
+.fa-info-circle::before, .fas.fa-info-circle::before { content: "ℹ️"; }
+.fa-exclamation-triangle::before, .fas.fa-exclamation-triangle::before { content: "⚠️"; }
+.fa-question-circle::before, .fas.fa-question-circle::before { content: "❓"; }
+.fa-bell::before, .fas.fa-bell::before { content: "🔔"; }
+.fa-search::before, .fas.fa-search::before { content: "🔍"; }
+.fa-download::before, .fas.fa-download::before { content: "⬇️"; }
+.fa-upload::before, .fas.fa-upload::before { content: "⬆️"; }
+.fa-sync::before, .fas.fa-sync::before, .fa-sync-alt::before, .fas.fa-sync-alt::before { content: "🔄"; }
+.fa-spinner::before, .fas.fa-spinner::before { content: "⏳"; }
+.fa-headset::before, .fas.fa-headset::before { content: "🎧"; }
+.fa-microphone::before, .fas.fa-microphone::before { content: "🎤"; }
+.fa-video::before, .fas.fa-video::before { content: "📹"; }
+.fa-file-pdf::before, .fas.fa-file-pdf::before { content: "📄"; }
+.fa-folder-open::before, .fas.fa-folder-open::before { content: "📂"; }
+.fa-chart-bar::before, .fas.fa-chart-bar::before { content: "📊"; }
+.fa-calendar::before, .fas.fa-calendar::before { content: "📅"; }
+.fa-clock::before, .fas.fa-clock::before { content: "🕐"; }
+.fa-star::before, .fas.fa-star::before { content: "⭐"; }
+.fa-heart::before, .fas.fa-heart::before { content: "❤️"; }
+.fa-thumbs-up::before, .fas.fa-thumbs-up::before { content: "👍"; }
+.fa-thumbs-down::before, .fas.fa-thumbs-down::before { content: "👎"; }
+.fa-envelope::before, .fas.fa-envelope::before { content: "✉️"; }
+.fa-phone::before, .fas.fa-phone::before { content: "📞"; }
+.fa-map-marker::before, .fas.fa-map-marker::before, .fa-map-marker-alt::before, .fas.fa-map-marker-alt::before { content: "📍"; }
+.fa-link::before, .fas.fa-link::before { content: "🔗"; }
+.fa-external-link::before, .fas.fa-external-link::before, .fa-external-link-alt::before, .fas.fa-external-link-alt::before { content: "🔗"; }
+.fa-save::before, .fas.fa-save::before { content: "💾"; }
+.fa-print::before, .fas.fa-print::before { content: "🖨️"; }
+.fa-copy::before, .fas.fa-copy::before { content: "📋"; }
+.fa-cut::before, .fas.fa-cut::before { content: "✂️"; }
+.fa-paste::before, .fas.fa-paste::before { content: "📋"; }
+.fa-undo::before, .fas.fa-undo::before { content: "↶"; }
+.fa-redo::before, .fas.fa-redo::before { content: "↷"; }
+.fa-bold::before, .fas.fa-bold::before { content: "B"; font-weight: bold; }
+.fa-italic::before, .fas.fa-italic::before { content: "I"; font-style: italic; }
+.fa-underline::before, .fas.fa-underline::before { content: "U"; text-decoration: underline; }
+.fa-font::before, .fas.fa-font::before { content: "Aa"; }
+.fa-text-height::before, .fas.fa-text-height::before { content: "Tt"; }
+.fa-align-left::before, .fas.fa-align-left::before { content: "≡"; }
+.fa-align-center::before, .fas.fa-align-center::before { content: "≡"; }
+.fa-align-right::before, .fas.fa-align-right::before { content: "≡"; }
+.fa-list::before, .fas.fa-list::before { content: "☰"; }
+.fa-list-ul::before, .fas.fa-list-ul::before { content: "•"; }
+.fa-list-ol::before, .fas.fa-list-ol::before { content: "1."; }
+.fa-table::before, .fas.fa-table::before { content: "⊞"; }
+.fa-image::before, .fas.fa-image::before { content: "🖼️"; }
+.fa-play::before, .fas.fa-play::before { content: "▶️"; }
+.fa-pause::before, .fas.fa-pause::before { content: "⏸️"; }
+.fa-stop::before, .fas.fa-stop::before { content: "⏹️"; }
+.fa-forward::before, .fas.fa-forward::before { content: "⏩"; }
+.fa-backward::before, .fas.fa-backward::before { content: "⏪"; }
+.fa-step-forward::before, .fas.fa-step-forward::before { content: "⏭️"; }
+.fa-step-backward::before, .fas.fa-step-backward::before { content: "⏮️"; }
+.fa-volume-up::before, .fas.fa-volume-up::before { content: "🔊"; }
+.fa-volume-down::before, .fas.fa-volume-down::before { content: "🔉"; }
+.fa-volume-mute::before, .fas.fa-volume-mute::before, .fa-volume-off::before, .fas.fa-volume-off::before { content: "🔇"; }
+.fa-wifi::before, .fas.fa-wifi::before { content: "📶"; }
+.fa-battery-full::before, .fas.fa-battery-full::before { content: "🔋"; }
+.fa-battery-half::before, .fas.fa-battery-half::before { content: "🔋"; }
+.fa-battery-empty::before, .fas.fa-battery-empty::before { content: "🪫"; }
+.fa-signal::before, .fas.fa-signal::before { content: "📶"; }
+.fa-bluetooth::before, .fab.fa-bluetooth::before { content: "🔵"; }
+.fa-usb::before, .fab.fa-usb::before { content: "🔌"; }
+.fa-keyboard::before, .fas.fa-keyboard::before { content: "⌨️"; }
+.fa-mouse::before, .fas.fa-mouse::before { content: "🖱️"; }
+.fa-desktop::before, .fas.fa-desktop::before { content: "🖥️"; }
+.fa-laptop::before, .fas.fa-laptop::before { content: "💻"; }
+.fa-tablet::before, .fas.fa-tablet::before, .fa-tablet-alt::before, .fas.fa-tablet-alt::before { content: "📱"; }
+.fa-mobile::before, .fas.fa-mobile::before, .fa-mobile-alt::before, .fas.fa-mobile-alt::before { content: "📱"; }
+.fa-gamepad::before, .fas.fa-gamepad::before { content: "🎮"; }
+.fa-camera::before, .fas.fa-camera::before { content: "📷"; }
+.fa-tv::before, .fas.fa-tv::before { content: "📺"; }
+.fa-radio::before, .fas.fa-radio::before { content: "📻"; }
+.fa-calculator::before, .fas.fa-calculator::before { content: "🧮"; }
+.fa-compass::before, .fas.fa-compass::before { content: "🧭"; }
+.fa-thermometer::before, .fas.fa-thermometer::before { content: "🌡️"; }
+.fa-weight::before, .fas.fa-weight::before { content: "⚖️"; }
+.fa-ruler::before, .fas.fa-ruler::before { content: "📏"; }
+.fa-stopwatch::before, .fas.fa-stopwatch::before { content: "⏱️"; }
+.fa-hourglass::before, .fas.fa-hourglass::before { content: "⏳"; }

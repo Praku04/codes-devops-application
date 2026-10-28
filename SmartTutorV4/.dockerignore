@@ -1,0 +1,37 @@
+# VCS / IDE
+.git
+.github
+.vscode
+**/.DS_Store
+
+# Secrets and local env (never bake into the image)
+.env
+**/.env
+**/*.pem
+env.json
+generate-env.py
+
+# Local / build artifacts
+.venv
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+app.log
+temp/*
+VoiceTraining-PoC.zip
+
+# Docs and CI not needed at runtime
+docs/
+README.md
+Codescan.yml
+Deployment.yml
+sonarqubescan.yml
+clean_pycache.py
+start_server.sh
+Dockerfile
+.dockerignore
+.gitignore
